@@ -30,20 +30,20 @@ function HomeContent() {
   return (
     <>
 
-      <section className="hero-section">
+      <section className="hero-section animate-up">
         <div className="hero-overlay" />
         <div className="hero-content">
-          <p className="tagline">Elite Fitness Experience</p>
-          <h1>Entrena fuerte. Vive mejor. Siente el cambio cada semana.</h1>
-          <p>
+          <p className="tagline animate-up delay-1">Premium Fitness Experience</p>
+          <h1 className="animate-up delay-1">Entrena fuerte. Vive mejor. Siente el cambio.</h1>
+          <p className="animate-up delay-2">
             En FitZone combinamos entrenamiento inteligente, coaches expertos y comunidad real para
-            ayudarte a cumplir tus objetivos.
+            ayudarte a cumplir tus objetivos y transformar tu vida.
           </p>
-          <div className="home-hero-actions">
+          <div className="home-hero-actions animate-up delay-2">
             <button type="button" className="gradient-btn big">
               Comenzar ahora
             </button>
-            <button type="button" className="pill-btn">
+            <button type="button" className="pill-btn big">
               Conocer más
             </button>
           </div>
@@ -68,13 +68,54 @@ function HomeContent() {
           </div>
           <div className="fz-svc-grid">
             {[
-              { n: '01', t: 'Rutinas guiadas', d: 'Programas por objetivo: fuerza, cardio, hipertrofia y recomposición corporal con seguimiento semanal.' },
-              { n: '02', t: 'Planes flexibles', d: 'Membresías mensual, premium y elite adaptadas exactamente a tu ritmo de vida y entrenamiento.' },
-              { n: '03', t: 'Clases y comunidad', d: 'HIIT, funcional y sesiones grupales con entrenadores certificados. Cada clase, una experiencia.' },
-              { n: '04', t: 'Tienda fitness', d: 'Suplementos y accesorios de alta calidad para complementar y potenciar tus metas diarias.' },
-            ].map((s) => (
-              <div className="fz-svc" key={s.n}>
+              {
+                n: '01',
+                t: 'Rutinas guiadas',
+                d: 'Programas por objetivo: fuerza, cardio, hipertrofia y recomposición corporal con seguimiento semanal.',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#grad1)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <defs><linearGradient id="grad1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ff4b63"/><stop offset="100%" stopColor="#ff8a00"/></linearGradient></defs>
+                    <path d="M6 4v16M18 4v16M3 8h4M17 8h4M3 16h4M17 16h4M9 12h6"/>
+                  </svg>
+                )
+              },
+              {
+                n: '02',
+                t: 'Planes flexibles',
+                d: 'Membresías mensual, premium y elite adaptadas exactamente a tu ritmo de vida y entrenamiento.',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#grad2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <defs><linearGradient id="grad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ff4b63"/><stop offset="100%" stopColor="#ff8a00"/></linearGradient></defs>
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+                  </svg>
+                )
+              },
+              {
+                n: '03',
+                t: 'Clases y comunidad',
+                d: 'HIIT, funcional y sesiones grupales con entrenadores certificados. Cada clase, una experiencia.',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#grad3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <defs><linearGradient id="grad3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ff4b63"/><stop offset="100%" stopColor="#ff8a00"/></linearGradient></defs>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                )
+              },
+              {
+                n: '04',
+                t: 'Tienda fitness',
+                d: 'Suplementos y accesorios de alta calidad para complementar y potenciar tus metas diarias.',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#grad4)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <defs><linearGradient id="grad4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ff4b63"/><stop offset="100%" stopColor="#ff8a00"/></linearGradient></defs>
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                  </svg>
+                )
+              },
+            ].map((s, idx) => (
+              <div className="fz-svc animate-up" style={{ animationDelay: `${idx * 0.1}s` }} key={s.n}>
                 <div className="fz-svc-bar" />
+                <div style={{ marginBottom: '0.8rem' }}>{s.icon}</div>
                 <div className="fz-svc-num">{s.n}</div>
                 <h3>{s.t}</h3>
                 <p>{s.d}</p>
@@ -89,14 +130,31 @@ function HomeContent() {
         <div className="fz-wrap">
           <div className="fz-stats-inner">
             {[
-              { n: '500+', l: 'Socios activos' },
-              { n: '12',   l: 'Coaches expertos' },
-              { n: '200+', l: 'Rutinas disponibles' },
-              { n: '8 años', l: 'De trayectoria' },
-            ].map((s) => (
-              <div className="fz-stat" key={s.l}>
-                <div className="fz-stat-num fz-grad-text">{s.n}</div>
-                <div className="fz-stat-label">{s.l}</div>
+              {
+                n: '500+',
+                l: 'Socios activos',
+                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              },
+              {
+                n: '12',
+                l: 'Coaches expertos',
+                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              },
+              {
+                n: '200+',
+                l: 'Rutinas disponibles',
+                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              },
+              {
+                n: '8 años',
+                l: 'De trayectoria',
+                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              },
+            ].map((s, idx) => (
+              <div className="fz-stat animate-up" style={{ animationDelay: `${idx * 0.15}s` }} key={s.l}>
+                <div style={{ marginBottom: '0.5rem' }}>{s.icon}</div>
+                <div className="fz-stat-num fz-grad-text" style={{ fontSize: '3rem', fontWeight: 800 }}>{s.n}</div>
+                <div className="fz-stat-label" style={{ color: '#bae6fd', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.l}</div>
               </div>
             ))}
           </div>

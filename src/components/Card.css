@@ -1,0 +1,193 @@
+.modern-card {
+  background: linear-gradient(160deg, rgba(16, 28, 55, 0.94), rgba(26, 43, 80, 0.86));
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+}
+
+.modern-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 0 15px rgba(56, 189, 248, 0.15);
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.premium-card {
+  border: 1px solid rgba(255, 138, 0, 0.4);
+  background: linear-gradient(160deg, rgba(25, 20, 20, 0.94), rgba(40, 20, 30, 0.86));
+  position: relative;
+}
+
+.premium-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ff4b63, #ff8a00);
+}
+
+.premium-card:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 138, 0, 0.25);
+  border-color: rgba(255, 138, 0, 0.6);
+}
+
+.card-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.modern-card:hover .card-image {
+  transform: scale(1.08);
+}
+
+.card-badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.card-badges-inline {
+  padding: 1.2rem 1.2rem 0;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.card-badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.card-badge.default { background: rgba(56, 189, 248, 0.2); color: #bae6fd; border: 1px solid rgba(56, 189, 248, 0.4); }
+.card-badge.success { background: rgba(34, 197, 94, 0.2); color: #bbf7d0; border: 1px solid rgba(34, 197, 94, 0.4); }
+.card-badge.warning { background: rgba(251, 191, 36, 0.2); color: #fef3c7; border: 1px solid rgba(251, 191, 36, 0.4); }
+.card-badge.danger { background: rgba(239, 68, 68, 0.2); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.4); }
+.card-badge.premium { background: rgba(255, 138, 0, 0.2); color: #ffedd5; border: 1px solid rgba(255, 138, 0, 0.4); }
+
+.card-content {
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.card-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.card-subtitle {
+  margin: 0 0 0.8rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.card-price-wrapper {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.card-price {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fb7185;
+}
+
+.card-old-price {
+  font-size: 1rem;
+  color: #64748b;
+  text-decoration: line-through;
+}
+
+.card-description {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.check-icon {
+  width: 16px;
+  height: 16px;
+  color: #34d399;
+  flex-shrink: 0;
+}
+
+.card-action {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+.card-btn {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 999px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.card-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.card-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.premium-btn {
+  background: linear-gradient(120deg, #ff4b63, #ff8a00);
+  box-shadow: 0 4px 15px rgba(255, 75, 99, 0.25);
+}
+
+.premium-btn:hover:not(:disabled) {
+  background: linear-gradient(120deg, #ff5c77, #ff9a1f);
+  box-shadow: 0 6px 20px rgba(255, 75, 99, 0.4);
+}

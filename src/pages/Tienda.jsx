@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react'
-import {
-  getTiendaProductos,
-  getTiendaCategorias,
-  getTiendaMarcas
-} from '../services/api'
+import { useCart } from '../context/CartContext'
 
 export default function Tienda() {
   const [productos,  setProductos]  = useState([])
@@ -17,30 +13,37 @@ export default function Tienda() {
     buscar:    '',
     orden:     'nombre',
   })
+  const { addItem } = useCart()
 
-  // Cargar categorías y marcas una vez
   useEffect(() => {
-    Promise.all([getTiendaCategorias(), getTiendaMarcas()])
-      .then(([catData, marcData]) => {
-        setCategorias(catData.categorias)
-        setMarcas(marcData.marcas)
-      })
-      .catch(err => setError(err.message))
+    const mockCategorias = [
+      { id_categoria: 1, nombre: 'Proteínas' },
+      { id_categoria: 2, nombre: 'Pre-entreno' },
+      { id_categoria: 3, nombre: 'Vitaminas' },
+      { id_categoria: 4, nombre: 'Accesorios' },
+    ]
+    const mockMarcas = [
+      { id_marca: 1, nombre: 'Optimum Nutrition' },
+      { id_marca: 2, nombre: 'MuscleTech' },
+      { id_marca: 3, nombre: 'Dymatize' },
+    ]
+    const mockProductos = [
+      { id: 1, nombre: 'Whey Gold Standard', sku: 'WGS-001', precio: 180000, categoria: 'Proteínas', marca: 'Optimum Nutrition', descripcion: 'Proteína whey de alta calidad con 24g por porción.', stock: 15, estado_stock: 'disponible', margen: 35, imagen: null },
+      { id: 2, nombre: 'Pre-workout C4', sku: 'C4-002', precio: 95000, categoria: 'Pre-entreno', marca: 'MuscleTech', descripcion: 'Energía explosiva para tus entrenamientos.', stock: 3, estado_stock: 'stock bajo', margen: 40, imagen: null },
+      { id: 3, nombre: 'Creatina Monohidrato', sku: 'CRE-003', precio: 75000, categoria: 'Proteínas', marca: 'Dymatize', descripcion: 'Aumenta fuerza y rendimiento muscular.', stock: 0, estado_stock: 'agotado', margen: 30, imagen: null },
+      { id: 4, nombre: 'Multivitamínico Sport', sku: 'MVS-004', precio: 55000, categoria: 'Vitaminas', marca: 'Optimum Nutrition', descripcion: 'Vitaminas y minerales para deportistas.', stock: 20, estado_stock: 'disponible', margen: 45, imagen: null },
+      { id: 5, nombre: 'BCAA 2:1:1', sku: 'BCA-005', precio: 88000, categoria: 'Proteínas', marca: 'MuscleTech', descripcion: 'Aminoácidos esenciales para recuperación muscular.', stock: 8, estado_stock: 'disponible', margen: 38, imagen: null },
+      { id: 6, nombre: 'Guantes de entreno', sku: 'GUA-006', precio: 45000, categoria: 'Accesorios', marca: 'Dymatize', descripcion: 'Guantes con grip reforzado para pesas.', stock: 12, estado_stock: 'disponible', margen: 50, imagen: null },
+    ]
+    setCategorias(mockCategorias)
+    setMarcas(mockMarcas)
+    setProductos(mockProductos)
+    setCargando(false)
   }, [])
-
-  // Recargar productos cuando cambien filtros
-  useEffect(() => {
-    setCargando(true)
-    getTiendaProductos(filtros)
-      .then(data => setProductos(data.productos))
-      .catch(err => setError(err.message))
-      .finally(() => setCargando(false))
-  }, [filtros])
 
   const setFiltro = (campo, valor) =>
     setFiltros(prev => ({ ...prev, [campo]: valor }))
 
-  // ── Estilos inline reutilizables ──────────────────────
   const selectStyle = {
     padding: '0.55rem 0.8rem',
     borderRadius: '0.6rem',
@@ -80,7 +83,7 @@ export default function Tienda() {
   return (
     <div className="main-shell">
 
-      {/* ── Hero de la tienda ── */}
+      {/* Hero */}
       <div style={{ marginBottom: '1.5rem' }}>
         <span className="fz-kicker">Catálogo</span>
         <h1 className="fz-big-title" style={{ marginBottom: '0.3rem' }}>
@@ -91,11 +94,9 @@ export default function Tienda() {
         </p>
       </div>
 
-      {/* ── Barra de filtros ── */}
+      {/* Filtros */}
       <div style={{ display: 'flex', gap: '0.7rem', marginBottom: '1.5rem',
                     flexWrap: 'wrap', alignItems: 'center' }}>
-
-        {/* Buscador */}
         <input
           type="text"
           placeholder="Buscar suplemento..."
@@ -103,32 +104,22 @@ export default function Tienda() {
           onChange={e => setFiltro('buscar', e.target.value)}
           style={{ ...selectStyle, minWidth: '200px', flex: 1 }}
         />
-
-        {/* Categoría */}
         <select value={filtros.categoria}
                 onChange={e => setFiltro('categoria', e.target.value)}
                 style={selectStyle}>
           <option value="">Todas las categorías</option>
           {categorias.map(c => (
-            <option key={c.id_categoria} value={c.id_categoria}>
-              {c.nombre}
-            </option>
+            <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
           ))}
         </select>
-
-        {/* Marca */}
         <select value={filtros.marca}
                 onChange={e => setFiltro('marca', e.target.value)}
                 style={selectStyle}>
           <option value="">Todas las marcas</option>
           {marcas.map(m => (
-            <option key={m.id_marca} value={m.id_marca}>
-              {m.nombre}
-            </option>
+            <option key={m.id_marca} value={m.id_marca}>{m.nombre}</option>
           ))}
         </select>
-
-        {/* Ordenar */}
         <select value={filtros.orden}
                 onChange={e => setFiltro('orden', e.target.value)}
                 style={selectStyle}>
@@ -137,20 +128,17 @@ export default function Tienda() {
           <option value="precio_desc">Precio: mayor a menor</option>
           <option value="nuevo">Más nuevos</option>
         </select>
-
-        {/* Botón limpiar filtros */}
         {(filtros.buscar || filtros.categoria || filtros.marca) && (
           <button
             onClick={() => setFiltros({ categoria:'', marca:'', buscar:'', orden:'nombre' })}
             style={{ ...selectStyle, background: 'rgba(255,75,99,0.12)',
-                     border: '1px solid rgba(255,75,99,0.3)', color: '#fca5a5',
-                     cursor: 'pointer' }}>
+                     border: '1px solid rgba(255,75,99,0.3)', color: '#fca5a5' }}>
             Limpiar filtros ×
           </button>
         )}
       </div>
 
-      {/* ── Grid de productos ── */}
+      {/* Grid */}
       {cargando ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem' }}>
           {[1,2,3,4,5,6].map(i => (
@@ -182,24 +170,22 @@ export default function Tienda() {
                               display: 'flex', flexDirection: 'column',
                               alignItems: 'center', justifyContent: 'center',
                               marginBottom: '0.8rem', gap: '0.4rem' }}>
-                  <span style={{ fontSize: '2rem', opacity: 0.3 }}>🏋️</span>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+                       stroke="rgba(255,75,99,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 4v16M18 4v16M3 8h4M17 8h4M3 16h4M17 16h4M9 12h6"/>
+                  </svg>
                   <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sin imagen</span>
                 </div>
               )}
 
-              {/* Badges categoría + marca */}
+              {/* Badges */}
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                {p.categoria && (
-                  <span style={badgeStyle('255,75,99')}>{p.categoria}</span>
-                )}
-                {p.marca && (
-                  <span style={badgeStyle('56,189,248')}>{p.marca}</span>
-                )}
+                {p.categoria && <span style={badgeStyle('255,75,99')}>{p.categoria}</span>}
+                {p.marca && <span style={badgeStyle('56,189,248')}>{p.marca}</span>}
               </div>
 
               {/* Nombre */}
-              <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.92rem',
-                           fontWeight: 600, lineHeight: 1.3 }}>
+              <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.92rem', fontWeight: 600, lineHeight: 1.3 }}>
                 {p.nombre}
               </h3>
 
@@ -217,30 +203,23 @@ export default function Tienda() {
                 </p>
               )}
 
-              {/* Espaciador */}
               <div style={{ flex: 1 }} />
 
               {/* Precio + stock */}
               <div style={{ display: 'flex', justifyContent: 'space-between',
                             alignItems: 'center', marginTop: '0.6rem', marginBottom: '0.7rem' }}>
-                <span className="price">
-                  ${p.precio.toLocaleString('es-CO')}
-                </span>
+                <span className="price">${p.precio.toLocaleString('es-CO')}</span>
                 <span style={badgeStyle(stockColor(p.estado_stock))}>
-                  {p.estado_stock === 'agotado'    ? 'Agotado'
+                  {p.estado_stock === 'agotado' ? 'Agotado'
                    : p.estado_stock === 'stock bajo' ? `Últimas ${p.stock} uds`
                    : `${p.stock} en stock`}
                 </span>
               </div>
 
-              {/* Margen (solo visible si quieres mostrarlo — puedes quitarlo) */}
-              <p style={{ margin: '0 0 0.7rem', fontSize: '0.7rem', color: '#64748b' }}>
-                Margen: {p.margen}%
-              </p>
-
               {/* Botón */}
               <button
                 disabled={p.estado_stock === 'agotado'}
+                onClick={() => addItem({ id: p.id, nombre: p.nombre, precio: p.precio, imagen: p.imagen })}
                 style={{
                   width: '100%', padding: '0.65rem', borderRadius: '999px',
                   border: 'none', fontWeight: 700, fontSize: '0.8rem',
@@ -250,8 +229,7 @@ export default function Tienda() {
                     ? 'rgba(148,163,184,0.12)'
                     : 'linear-gradient(120deg,#ff4b63,#ff8a00)',
                   color: p.estado_stock === 'agotado' ? '#475569' : 'white',
-                  boxShadow: p.estado_stock === 'agotado'
-                    ? 'none' : '0 4px 15px rgba(255,75,99,0.25)',
+                  boxShadow: p.estado_stock === 'agotado' ? 'none' : '0 4px 15px rgba(255,75,99,0.25)',
                 }}>
                 {p.estado_stock === 'agotado' ? 'Sin stock' : 'Agregar al carrito'}
               </button>

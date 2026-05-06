@@ -8,6 +8,8 @@ import Planes from './pages/Planes'
 import Ejercicios from './pages/Ejercicios'
 import Tienda from './pages/Tienda'
 import Galeria from './pages/Galeria'
+import Registro from './pages/Registro'
+import Carrito from './pages/Carrito'
 
 import { isAuthenticated, getCurrentUser } from './services/authMock'
 
@@ -36,14 +38,16 @@ function App() {
         {/* Login */}
         <Route path="/login" element={<Login />} />
 
+        {/* Registro */}
+        <Route path="/registro" element={<Registro onRegister={() => {}} />} />
+
+        {/* Carrito */}
+        <Route path="/carrito" element={<Carrito />} />
+
         {/* HOME */}
         <Route
           path="/"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
+          element={<Dashboard />}
         />
 
         {/* NUEVAS RUTAS */}
