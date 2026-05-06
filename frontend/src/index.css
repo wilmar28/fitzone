@@ -280,13 +280,42 @@ body {
 
 .card {
   border-radius: 1rem;
-  padding: 1rem;
+  padding: 1.5rem;
   background: linear-gradient(160deg, rgba(16, 28, 55, 0.94), rgba(26, 43, 80, 0.86));
   border: 1px solid rgba(148, 163, 184, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 75, 99, 0.3);
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #f8fafc;
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+}
+
+.card button {
+  margin-top: auto;
+  align-self: flex-start;
+  width: auto;
 }
 
 .price {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 800;
   color: #fb7185;
 }
@@ -599,44 +628,147 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.gallery-photo {
-  width: 100%;
-  height: 190px;
-  object-fit: cover;
+.gallery-item {
+  position: relative;
+  overflow: hidden;
   border-radius: 0.8rem;
   border: 1px solid rgba(148, 163, 184, 0.25);
+  cursor: pointer;
 }
 
-.modal-backdrop {
-  position: fixed;
+.gallery-photo {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  display: block;
+}
+
+.gallery-overlay {
+  position: absolute;
   inset: 0;
-  background: rgba(2, 6, 23, 0.68);
-  display: grid;
-  place-items: center;
-  z-index: 40;
-  padding: 1rem;
-}
-
-.modal-card {
-  width: min(560px, 100%);
-  border-radius: 1rem;
-  padding: 1.2rem;
-}
-
-.modal-card h3 {
-  margin-top: 0;
-}
-
-.modal-card ul {
-  margin: 0.8rem 0 1rem;
-  padding-left: 1rem;
-  color: #e2e8f0;
-}
-
-.modal-actions {
+  background: linear-gradient(to top, rgba(10, 15, 31, 0.9), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
   display: flex;
+  align-items: flex-end;
+  padding: 1.5rem;
+}
+
+.gallery-item:hover .gallery-photo {
+  transform: scale(1.1);
+}
+
+.gallery-item:hover .gallery-overlay {
+  opacity: 1;
+}
+
+.gallery-title {
+  margin: 0;
+  color: #f8fafc;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  transform: translateY(15px);
+  transition: transform 0.3s ease;
+}
+
+.gallery-item:hover .gallery-title {
+  transform: translateY(0);
+}
+
+.gallery-modal-content {
+  position: relative;
+  background: #0a0f1f;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.gallery-modal-img {
+  width: 100%;
+  height: auto;
+  max-height: 75vh;
+  object-fit: contain;
+  display: block;
+}
+
+.gallery-modal-title {
+  padding: 1.2rem 1.5rem;
+  margin: 0;
+  background: #0a0f1f;
+  color: #f8fafc;
+  font-family: 'Syne', sans-serif;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.gallery-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.3s;
+}
+
+.gallery-close-btn:hover {
+  background: rgba(255, 75, 99, 0.8);
+}
+
+/* Custom Bootstrap Modal Styles */
+.custom-modal-content {
+  background: linear-gradient(160deg, #101c37, #1a2b50);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1.2rem;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+  color: #f8fafc;
+}
+
+.custom-modal-header {
+  background: linear-gradient(120deg, rgba(20, 30, 48, 0.6), rgba(36, 59, 85, 0.4));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  padding: 1.2rem 1.6rem;
+}
+
+.custom-modal-header .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+  opacity: 0.6;
+}
+
+.custom-modal-title {
+  font-weight: 800;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.custom-modal-body {
+  padding: 1.6rem;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.custom-modal-footer {
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  padding: 1.2rem 1.6rem;
+  background: rgba(10, 15, 31, 0.3);
+  display: flex;
+  gap: 0.8rem;
   justify-content: flex-end;
-  gap: 0.6rem;
 }
 
 .animate-up {
@@ -791,12 +923,14 @@ body {
   padding: 2.2rem 1.8rem;
   position: relative;
   overflow: hidden;
-  transition: background 0.3s;
-  cursor: default;
+  transition: transform 0.3s ease, background 0.3s, box-shadow 0.3s ease;
+  cursor: pointer;
 }
 
 .fz-svc:hover {
   background: linear-gradient(160deg, rgba(20, 34, 68, 0.99), rgba(30, 50, 95, 0.95));
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 .fz-svc-bar {
@@ -954,6 +1088,13 @@ body {
   border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: 0.8rem;
   padding: 1rem 1.2rem;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  cursor: default;
+}
+
+.fz-mini:hover {
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.4);
 }
 
 .fz-mini-num {
@@ -1221,6 +1362,13 @@ body {
   padding: 4.5rem 3rem;
   position: relative;
   overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fz-contact-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  border-color: rgba(56, 189, 248, 0.35);
 }
 
 .fz-contact-box::before {

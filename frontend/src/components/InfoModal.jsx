@@ -1,3 +1,5 @@
+import { Modal } from 'react-bootstrap'
+
 function InfoModal({
   isOpen,
   title,
@@ -7,29 +9,32 @@ function InfoModal({
   onConfirm,
   onClose,
 }) {
-  if (!isOpen) return null
-
   return (
-    <div className="modal-backdrop">
-      <div className="modal-box">
-        <h2>{title}</h2>
+    <Modal show={isOpen} onHide={onClose} centered contentClassName="custom-modal-content" backdropClassName="modal-backdrop">
+      <Modal.Header closeButton className="custom-modal-header">
+        <Modal.Title className="custom-modal-title">{title}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body className="custom-modal-body">
         <p>{description}</p>
-
-        <ul>
-          {details?.map((item, index) => (
-            <li key={index}>{item}</li>
-          ))}
-        </ul>
-
-        <button onClick={onConfirm}>
-          {confirmLabel}
-        </button>
-
-        <button onClick={onClose}>
+        {details && details.length > 0 && (
+          <ul style={{ paddingLeft: '1.2rem', marginTop: '0.8rem' }}>
+            {details.map((item, index) => (
+              <li key={index} style={{ marginBottom: '0.4rem' }}>{item}</li>
+            ))}
+          </ul>
+        )}
+      </Modal.Body>
+      <Modal.Footer className="custom-modal-footer">
+        <button type="button" className="pill-btn" onClick={onClose} style={{ background: 'transparent', border: '1px solid rgba(148, 163, 184, 0.4)' }}>
           Cerrar
         </button>
-      </div>
-    </div>
+        {confirmLabel && (
+          <button type="button" className="gradient-btn" onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+        )}
+      </Modal.Footer>
+    </Modal>
   )
 }
 

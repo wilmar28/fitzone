@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 
 
@@ -9,71 +10,90 @@ import Login from './Login'
 import Registro from './Registro'
 import Carrito from './Carrito'
 
-function Dashboard() {
+function AnimatedCounter({ end, duration = 2000, suffix = '' }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTime = null;
+    const animate = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+      // easeOutQuart
+      const easeProgress = 1 - Math.pow(1 - progress, 4);
+      setCount(Math.floor(easeProgress * end));
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    requestAnimationFrame(animate);
+  }, [end, duration]);
+
+  return <>{count}{suffix}</>;
+}
+
+function Dashboard({ cartItems, onAddToCart, onRemoveItem, onClearCart }) {
   return (
     <Routes>
       <Route path="/" element={<HomeContent />} />
       <Route path="/planes" element={<Planes />} />
       <Route path="/ejercicios" element={<Ejercicios />} />
-      <Route path="/tienda" element={<Tienda />} />
+      <Route path="/tienda" element={<Tienda onAddToCart={onAddToCart} />} />
       <Route path="/galeria" element={<Galeria />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
-      <Route path="/carrito" element={<Carrito />} />
+      <Route path="/carrito" element={<Carrito cartItems={cartItems} onRemoveItem={onRemoveItem} onClearCart={onClearCart} />} />
     </Routes>
   )
 }
 
 function HomeContent() {
   return (
-    <>
-
+    <div className="home-wrapper">
       <section className="hero-section">
         <div className="hero-overlay" />
         <div className="hero-content">
-          <p className="tagline">Elite Fitness Experience</p>
-          <h1>Entrena fuerte. Vive mejor. Siente el cambio cada semana.</h1>
-          <p>
+          <p className="tagline animate-up delay-1">Elite Fitness Experience</p>
+          <h1 className="animate-up delay-2">Entrena fuerte. Vive mejor. Siente el cambio cada semana.</h1>
+          <p className="animate-up delay-3" style={{ animationDelay: '0.4s' }}>
             En FitZone combinamos entrenamiento inteligente, coaches expertos y comunidad real para
             ayudarte a cumplir tus objetivos.
           </p>
-          <div className="home-hero-actions">
+          <div className="home-hero-actions animate-up delay-4" style={{ animationDelay: '0.6s' }}>
             <button type="button" className="gradient-btn big">
               Comenzar ahora
             </button>
-            <button type="button" className="pill-btn">
-              Conocer más
+            <button type="button" className="pill-btn big">
+              Conocer mas
             </button>
           </div>
         </div>
       </section>
 
-    
       <section className="fz-services">
         <div className="fz-wrap">
           <div className="fz-services-head">
             <div>
-              <p className="fz-kicker">¿Qué ofrecemos?</p>
+              <p className="fz-kicker">¿Que ofrecemos?</p>
               <h2 className="fz-big-title">
                 Todo lo que necesitas<br />
                 <span className="fz-grad-text">en un solo gym</span>
               </h2>
             </div>
             <p className="fz-copy fz-services-copy">
-              Cada módulo está diseñado para mejorar tu experiencia de entrenamiento y mantener
+              Cada modulo esta diseñado para mejorar tu experiencia de entrenamiento y mantener
               tus resultados en crecimiento constante.
             </p>
           </div>
           <div className="fz-svc-grid">
             {[
-              { n: '01', t: 'Rutinas guiadas', d: 'Programas por objetivo: fuerza, cardio, hipertrofia y recomposición corporal con seguimiento semanal.' },
-              { n: '02', t: 'Planes flexibles', d: 'Membresías mensual, premium y elite adaptadas exactamente a tu ritmo de vida y entrenamiento.' },
-              { n: '03', t: 'Clases y comunidad', d: 'HIIT, funcional y sesiones grupales con entrenadores certificados. Cada clase, una experiencia.' },
-              { n: '04', t: 'Tienda fitness', d: 'Suplementos y accesorios de alta calidad para complementar y potenciar tus metas diarias.' },
-            ].map((s) => (
-              <div className="fz-svc" key={s.n}>
+              { n: '🏋️', t: 'Rutinas guiadas', d: 'Programas por objetivo: fuerza, cardio, hipertrofia y recomposicion.' },
+              { n: '⭐', t: 'Planes flexibles', d: 'Membresias adaptadas exactamente a tu ritmo de vida y entrenamiento.' },
+              { n: '🔥', t: 'Clases y comunidad', d: 'HIIT, funcional y sesiones grupales con entrenadores certificados.' },
+              { n: '🛍️', t: 'Tienda fitness', d: 'Suplementos y accesorios de alta calidad para potenciar tus metas.' },
+            ].map((s, i) => (
+              <div className="fz-svc animate-up" style={{ animationDelay: `${i * 0.1}s` }} key={s.t}>
                 <div className="fz-svc-bar" />
-                <div className="fz-svc-num">{s.n}</div>
+                <div className="fz-svc-icon" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{s.n}</div>
                 <h3>{s.t}</h3>
                 <p>{s.d}</p>
               </div>
@@ -82,18 +102,19 @@ function HomeContent() {
         </div>
       </section>
 
-      
       <div className="fz-stats">
         <div className="fz-wrap">
           <div className="fz-stats-inner">
             {[
-              { n: '500+', l: 'Socios activos' },
-              { n: '12',   l: 'Coaches expertos' },
-              { n: '200+', l: 'Rutinas disponibles' },
-              { n: '8 años', l: 'De trayectoria' },
+              { n: 500, suffix: '+', l: 'Socios activos' },
+              { n: 12, suffix: '', l: 'Coaches expertos' },
+              { n: 200, suffix: '+', l: 'Rutinas disponibles' },
+              { n: 8, suffix: ' años', l: 'De trayectoria' },
             ].map((s) => (
               <div className="fz-stat" key={s.l}>
-                <div className="fz-stat-num fz-grad-text">{s.n}</div>
+                <div className="fz-stat-num fz-grad-text">
+                  <AnimatedCounter end={s.n} suffix={s.suffix} />
+                </div>
                 <div className="fz-stat-label">{s.l}</div>
               </div>
             ))}
@@ -254,7 +275,7 @@ function HomeContent() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   )
 }
 

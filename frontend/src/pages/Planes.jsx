@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import InfoModal from '../components/InfoModal'
+import UniversalCard from '../components/UniversalCard'
 
 const plans = [
-  { nombre: 'Plan Basico', precio: '$29/mes', beneficios: 'Acceso a zona cardio y pesas' },
-  { nombre: 'Plan Premium', precio: '$49/mes', beneficios: 'Incluye clases dirigidas y asesoria' },
-  { nombre: 'Plan Elite', precio: '$79/mes', beneficios: 'Todo incluido + plan personalizado' },
+  { nombre: 'Plan Basico', precio: '$29', oldPrice: '', features: ['Acceso a zona cardio y pesas', 'Vestidores y duchas', 'App FitZone básica'], isFeatured: false },
+  { nombre: 'Plan Premium', precio: '$49', oldPrice: '', features: ['Incluye clases dirigidas', 'Acceso ilimitado', 'Asesoría mensual con coach', 'Descuento en tienda'], isFeatured: true, badge: 'Popular', badgeColor: 'primary' },
+  { nombre: 'Plan Elite', precio: '$79', oldPrice: '', features: ['Todo incluido + plan personalizado', 'Nutricionista asignado', 'Coach dedicado', 'Acceso 24/7 VIP'], isFeatured: false },
 ]
 
 function Planes() {
@@ -18,18 +19,23 @@ function Planes() {
     <section>
       <h2 className="section-title">Planes Destacados</h2>
       <p className="section-subtitle">Elige el plan ideal para tus metas fitness.</p>
-      <div className="grid-cards">
+      
+      <div className="grid-cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', alignItems: 'stretch' }}>
         {plans.map((plan) => (
-          <article key={plan.nombre} className="card animate-up">
-            <h3>{plan.nombre}</h3>
-            <p className="price">{plan.precio}</p>
-            <p>{plan.beneficios}</p>
-            <button type="button" className="gradient-btn big" onClick={() => handleSuscribe(plan)}>
-              Suscribirme
-            </button>
-          </article>
+          <UniversalCard
+            key={plan.nombre}
+            title={plan.nombre}
+            price={`${plan.precio}/mes`}
+            features={plan.features}
+            isFeatured={plan.isFeatured}
+            badge={plan.badge}
+            badgeColor={plan.badgeColor}
+            buttonText="Suscribirme"
+            onButtonClick={() => handleSuscribe(plan)}
+          />
         ))}
       </div>
+
       <InfoModal
         isOpen={Boolean(selectedPlan)}
         title={selectedPlan ? `Suscripcion ${selectedPlan.nombre}` : ''}
