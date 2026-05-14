@@ -34,10 +34,24 @@ function Navbar() {
 
       <div className="nav-actions">
         <Link to="/carrito" className="cart-icon-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <path d="M16 10a4 4 0 01-8 0"/>
+          {/* Cart SVG */}
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {/* Cart body */}
+            <path d="M2 3h1.5l1.8 9.5a2 2 0 0 0 2 1.5h8.4a2 2 0 0 0 1.96-1.6L19 7H5.5" />
+            {/* Handle / arrow from bag entrance */}
+            <polyline points="5.5 7 4.5 3" />
+            {/* Wheels */}
+            <circle cx="9" cy="20" r="1" fill="currentColor" stroke="none" />
+            <circle cx="16" cy="20" r="1" fill="currentColor" stroke="none" />
           </svg>
           {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
         </Link>

@@ -1,6 +1,71 @@
 import { useEffect, useState } from 'react'
 import { useCart } from '../context/CartContext'
 
+// Toast notification component
+function Toast({ toasts }) {
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: '1.5rem',
+      right: '1.5rem',
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.6rem',
+      pointerEvents: 'none',
+    }}>
+      {toasts.map(t => (
+        <div key={t.id} style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.7rem',
+          padding: '0.75rem 1.1rem',
+          borderRadius: '0.9rem',
+          background: 'rgba(15,23,42,0.92)',
+          border: '1px solid rgba(34,197,94,0.35)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(34,197,94,0.1)',
+          backdropFilter: 'blur(12px)',
+          color: 'white',
+          fontSize: '0.82rem',
+          fontWeight: 500,
+          minWidth: '230px',
+          animation: 'toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+          opacity: t.leaving ? 0 : 1,
+          transform: t.leaving ? 'translateX(30px)' : 'translateX(0)',
+          transition: 'opacity 0.25s ease, transform 0.25s ease',
+        }}>
+          {/* Check icon */}
+          <div style={{
+            width: '28px', height: '28px', borderRadius: '50%',
+            background: 'rgba(34,197,94,0.15)',
+            border: '1px solid rgba(34,197,94,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="rgb(34,197,94)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{ color: 'rgb(134,239,172)', fontSize: '0.7rem', fontWeight: 700,
+                          textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1px' }}>
+              Agregado al carrito
+            </div>
+            <div style={{ color: '#e2e8f0' }}>{t.nombre}</div>
+          </div>
+        </div>
+      ))}
+      <style>{`
+        @keyframes toastIn {
+          from { opacity: 0; transform: translateX(40px) scale(0.92); }
+          to   { opacity: 1; transform: translateX(0)   scale(1);    }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 export default function Tienda() {
   const [productos,  setProductos]  = useState([])
   const [categorias, setCategorias] = useState([])
@@ -13,6 +78,7 @@ export default function Tienda() {
     buscar:    '',
     orden:     'nombre',
   })
+  const [toasts, setToasts] = useState([])
   const { addItem } = useCart()
 
   useEffect(() => {
@@ -40,6 +106,24 @@ export default function Tienda() {
     setProductos(mockProductos)
     setCargando(false)
   }, [])
+
+  const showToast = (nombre) => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, nombre, leaving: false }])
+    // Start leave animation after 2.5s
+    setTimeout(() => {
+      setToasts(prev => prev.map(t => t.id === id ? { ...t, leaving: true } : t))
+    }, 2500)
+    // Remove from DOM after animation completes
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 2800)
+  }
+
+  const handleAddItem = (p) => {
+    addItem({ id: p.id, nombre: p.nombre, precio: p.precio, imagen: p.imagen })
+    showToast(p.nombre)
+  }
 
   const setFiltro = (campo, valor) =>
     setFiltros(prev => ({ ...prev, [campo]: valor }))
@@ -82,6 +166,7 @@ export default function Tienda() {
 
   return (
     <div className="main-shell">
+      <Toast toasts={toasts} />
 
       {/* Hero */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -219,7 +304,7 @@ export default function Tienda() {
               {/* Botón */}
               <button
                 disabled={p.estado_stock === 'agotado'}
-                onClick={() => addItem({ id: p.id, nombre: p.nombre, precio: p.precio, imagen: p.imagen })}
+                onClick={() => handleAddItem(p)}
                 style={{
                   width: '100%', padding: '0.65rem', borderRadius: '999px',
                   border: 'none', fontWeight: 700, fontSize: '0.8rem',
