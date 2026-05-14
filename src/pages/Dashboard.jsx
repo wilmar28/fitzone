@@ -161,6 +161,68 @@ function HomeContent() {
         </div>
       </div>
 
+      {/* ── CALIFICACIONES ── */}
+      <section className="fz-ratings">
+        <div className="fz-wrap">
+          <div className="fz-ratings-container">
+            <div className="fz-ratings-content">
+              <p className="fz-kicker">Tu opinión importa</p>
+              <h2 className="fz-big-title">¿Cómo fue tu experiencia?</h2>
+              <p className="fz-copy">Califica FitZone y ayuda a otros a descubrir nuestro gym</p>
+
+              <div className="fz-rating-box">
+                <div className="fz-rating-stars">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      className="fz-star"
+                      onClick={() => console.log(`Rating: ${star}`)}
+                      type="button"
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+                <button className="fz-rating-btn">Enviar calificación</button>
+              </div>
+            </div>
+
+            <div className="fz-ratings-stats">
+              <div className="fz-ratings-display">
+                <div className="fz-rating-average">
+                  <div className="fz-rating-number">4.9</div>
+                  <div className="fz-rating-stars-display">
+                    ★★★★★
+                  </div>
+                  <div className="fz-rating-count">1,243 calificaciones</div>
+                </div>
+
+                <div className="fz-rating-breakdown">
+                  {[
+                    { stars: 5, percentage: 85 },
+                    { stars: 4, percentage: 10 },
+                    { stars: 3, percentage: 3 },
+                    { stars: 2, percentage: 1 },
+                    { stars: 1, percentage: 1 },
+                  ].map((item) => (
+                    <div className="fz-rating-bar-item" key={item.stars}>
+                      <span className="fz-rating-label">{item.stars}★</span>
+                      <div className="fz-rating-bar">
+                        <div
+                          className="fz-rating-bar-fill"
+                          style={{ width: `${item.percentage}%` }}
+                        />
+                      </div>
+                      <span className="fz-rating-percent">{item.percentage}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
    
       <section className="fz-about">
         <div className="fz-wrap">

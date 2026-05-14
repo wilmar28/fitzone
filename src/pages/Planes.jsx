@@ -63,6 +63,7 @@ function Planes() {
           Elige el plan ideal para tus metas fitness. Sin contratos largos.
         </p>
       </div>
+
       <div className="grid-cards">
         {plans.map((plan) => (
           <div key={plan.nombre} className="animate-up">
@@ -79,6 +80,7 @@ function Planes() {
           </div>
         ))}
       </div>
+
       <InfoModal
         isOpen={Boolean(selectedPlan)}
         title={selectedPlan ? `Suscripción ${selectedPlan.nombre}` : ''}
@@ -88,6 +90,16 @@ function Planes() {
           'Beneficios VIP en clases grupales y eventos.',
           'Soporte por WhatsApp y asesor de entrenamiento.',
         ]}
+        plan={{
+          precio: selectedPlan?.precio,
+          periodo: selectedPlan?.periodo,
+          badge: selectedPlan?.badge,
+        }}
+        confirmLabel="Comprar ahora"
+        onConfirm={() => {
+          // aquí va la lógica de pago
+          setSelectedPlan(null)
+        }}
         onClose={() => setSelectedPlan(null)}
       />
     </section>
