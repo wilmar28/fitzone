@@ -1,144 +1,359 @@
 // src/services/api.js
 
-const BASE_URL = 'http://localhost:8000/api';  // ← descomentada
+import { createClient } from '@supabase/supabase-js'
+console.log(import.meta.env)
+// ════════════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ════════════════════════════════════════════════════════
 
-// ── Helper con token ──────────────────────────────────
-const getToken = () => localStorage.getItem('fitzone_token');
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-const authFetch = async (endpoint, options = {}) => {
-  const token = getToken();
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-    ...options,
-  });
-  if (response.status === 401) {
-    localStorage.removeItem('fitzone_token');
-    localStorage.removeItem('fitzone_user');
-    window.location.href = '/login';
-    throw new Error('Sesión expirada');
+export const supabase = createClient(
+  supabaseUrl,
+  supabaseAnonKey
+)
+
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+
+const saveSession = (session, user) => {
+  if (session?.access_token) {
+    localStorage.setItem('fitzone_token', session.access_token)
   }
-  const data = await response.json();
-  if (!response.ok) {
-    const err = new Error(data.message || `Error ${response.status}`);
-    err.errors = data.errors;
-    throw err;
+
+  if (user) {
+    localStorage.setItem(
+      'fitzone_user',
+      JSON.stringify(user)
+    )
   }
-  return data;
-};
+}
 
-// ── Helper sin token (rutas públicas) ────────────────
-const publicFetch = async (endpoint) => {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Error');
-  return data;
-};
+const clearSession = () => {
+  localStorage.removeItem('fitzone_token')
+  localStorage.removeItem('fitzone_user')
+}
 
 // ════════════════════════════════════════════════════════
-//  DISPOSITIVOS Y PRÉSTAMOS
-//  (ahora desde el backend, no desde JSON local)
+// AUTH
 // ════════════════════════════════════════════════════════
-export const getDispositivos = () => authFetch('/dispositivos');
-export const getPrestamos = () => authFetch('/prestamos');
 
-// ════════════════════════════════════════════════════════
-//  AUTH
-// ════════════════════════════════════════════════════════
-export const registerUser = async (name, email, password) => {
-  const data = await authFetch('/register', {
-    method: 'POST',
-    body: JSON.stringify({ name, email, password, password_confirmation: password }),
-  });
-  localStorage.setItem('fitzone_token', data.token);
-  localStorage.setItem('fitzone_user', JSON.stringify(data.user));
-  return data;
-};
+export const registerUser = async (
+  name,
+  email,
+  password
+) => {
+  const { data, error } =
+    await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+        },
+      },
+    })
 
-export const loginUser = async (email, password) => {
-  const data = await authFetch('/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  });
-  localStorage.setItem('fitzone_token', data.token);
-  localStorage.setItem('fitzone_user', JSON.stringify(data.user));
-  return data;
-};
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  saveSession(data.session, data.user)
+
+  return data
+}
+
+export const loginUser = async (
+  email,
+  password
+) => {
+  const { data, error } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  saveSession(data.session, data.user)
+
+  return data
+}
 
 export const logoutUser = async () => {
-  await authFetch('/logout', { method: 'POST' }).catch(() => { });
-  localStorage.removeItem('fitzone_token');
-  localStorage.removeItem('fitzone_user');
-};
+  await supabase.auth.signOut()
+  clearSession()
+}
 
-export const getMe = () => authFetch('/me');
-export const isAuthenticated = () => !!getToken();
+export const getMe = async () => {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return user
+}
+
+export const isAuthenticated = () => {
+  return !!localStorage.getItem('fitzone_token')
+}
+
 export const getCurrentUser = () => {
-  const u = localStorage.getItem('fitzone_user');
-  return u ? JSON.parse(u) : null;
-};
+  const user = localStorage.getItem('fitzone_user')
+
+  return user ? JSON.parse(user) : null
+}
 
 // ════════════════════════════════════════════════════════
-//  DASHBOARD
+// DASHBOARD
 // ════════════════════════════════════════════════════════
-export const getDashboard = () => authFetch('/dashboard');
+
+export const getDashboard = async () => {
+  const user = await getMe()
+
+  return {
+    user,
+  }
+}
 
 // ════════════════════════════════════════════════════════
-//  PRODUCTOS (panel admin)
+// PRODUCTOS
+// TABLA: products
 // ════════════════════════════════════════════════════════
-export const getProducts = (p = {}) => authFetch(`/products?${new URLSearchParams(p)}`);
-export const getProductById = (id) => authFetch(`/products/${id}`);
-export const getStockSummary = () => authFetch('/products/stock/summary');
-export const createProduct = (d) => authFetch('/products', { method: 'POST', body: JSON.stringify(d) });
-export const updateProduct = (id, d) => authFetch(`/products/${id}`, { method: 'PUT', body: JSON.stringify(d) });
-export const deleteProduct = (id) => authFetch(`/products/${id}`, { method: 'DELETE' });
+
+export const getProducts = async () => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const getProductById = async (id) => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const createProduct = async (
+  productData
+) => {
+  const { data, error } = await supabase
+    .from('products')
+    .insert([productData])
+    .select()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const updateProduct = async (
+  id,
+  productData
+) => {
+  const { data, error } = await supabase
+    .from('products')
+    .update(productData)
+    .eq('id', id)
+    .select()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const deleteProduct = async (id) => {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return true
+}
 
 // ════════════════════════════════════════════════════════
-//  VENTAS (panel admin)
+// VENTAS
+// TABLA: sales
 // ════════════════════════════════════════════════════════
-export const getSales = (p = {}) => authFetch(`/sales?${new URLSearchParams(p)}`);
-export const getSaleById = (id) => authFetch(`/sales/${id}`);
-export const createSale = (d) => authFetch('/sales', { method: 'POST', body: JSON.stringify(d) });
+
+export const getSales = async () => {
+  const { data, error } = await supabase
+    .from('sales')
+    .select('*')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const getSaleById = async (id) => {
+  const { data, error } = await supabase
+    .from('sales')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const createSale = async (
+  saleData
+) => {
+  const { data, error } = await supabase
+    .from('sales')
+    .insert([saleData])
+    .select()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
 
 // ════════════════════════════════════════════════════════
-//  TIENDA PÚBLICA — no requieren token
+// DISPOSITIVOS
+// TABLA: dispositivos
 // ════════════════════════════════════════════════════════
-export const getTiendaProductos = (params = {}) => {
-  const query = new URLSearchParams(
-    Object.fromEntries(Object.entries(params).filter(([, v]) => v !== ''))
-  ).toString();
-  return publicFetch(`/tienda/productos${query ? '?' + query : ''}`);
-};
 
-export const getTiendaProducto = (id) => publicFetch(`/tienda/productos/${id}`);
-export const getTiendaCategorias = () => publicFetch('/tienda/categorias');
-export const getTiendaMarcas = () => publicFetch('/tienda/marcas');
+export const getDispositivos = async () => {
+  const { data, error } = await supabase
+    .from('dispositivos')
+    .select('*')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
 
 // ════════════════════════════════════════════════════════
-//  REPORTES
+// PRESTAMOS
+// TABLA: prestamos
 // ════════════════════════════════════════════════════════
-const downloadFile = async (endpoint, filename) => {
-  const token = getToken();
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: '*/*' },
-  });
-  if (!res.ok) throw new Error('Error al generar reporte');
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-};
 
-export const downloadSalesPDF = () => downloadFile('/reports/pdf?type=sales', 'fitzone-ventas.pdf');
-export const downloadStockPDF = () => downloadFile('/reports/pdf?type=stock', 'fitzone-inventario.pdf');
-export const downloadSalesExcel = () => downloadFile('/reports/excel?type=sales', 'fitzone-ventas.xlsx');
-export const downloadStockExcel = () => downloadFile('/reports/excel?type=stock', 'fitzone-inventario.xlsx');
+export const getPrestamos = async () => {
+  const { data, error } = await supabase
+    .from('prestamos')
+    .select('*')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+// ════════════════════════════════════════════════════════
+// TIENDA PÚBLICA
+// TABLA: products
+// ════════════════════════════════════════════════════════
+
+export const getTiendaProductos = async () => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const getTiendaProducto = async (
+  id
+) => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const getTiendaCategorias = async () => {
+  const { data, error } = await supabase
+    .from('categorias')
+    .select('*')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const getTiendaMarcas = async () => {
+  const { data, error } = await supabase
+    .from('marcas')
+    .select('*')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+// ════════════════════════════════════════════════════════
+// REPORTES
+// ════════════════════════════════════════════════════════
+
+export const downloadSalesPDF = async () => {
+  console.log('Pendiente implementar')
+}
+
+export const downloadStockPDF = async () => {
+  console.log('Pendiente implementar')
+}
+
+export const downloadSalesExcel = async () => {
+  console.log('Pendiente implementar')
+}
+
+export const downloadStockExcel = async () => {
+  console.log('Pendiente implementar')
+}

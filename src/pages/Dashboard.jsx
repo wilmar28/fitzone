@@ -1,29 +1,10 @@
-import { Routes, Route } from 'react-router-dom'
 
 
 
 
-import Planes from './Planes'
-import Ejercicios from './Ejercicios'
-import Tienda from './Tienda'
-import Galeria from './Galeria'
-import Login from './Login'
-import Registro from './Registro'
-import Carrito from './Carrito'
 
 function Dashboard() {
-  return (
-    <Routes>
-      <Route path="/" element={<HomeContent />} />
-      <Route path="/planes" element={<Planes />} />
-      <Route path="/ejercicios" element={<Ejercicios />} />
-      <Route path="/tienda" element={<Tienda />} />
-      <Route path="/galeria" element={<Galeria />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/registro" element={<Registro />} />
-      <Route path="/carrito" element={<Carrito />} />
-    </Routes>
-  )
+  return <HomeContent />
 }
 
 function HomeContent() {

@@ -1,7 +1,7 @@
 import { useCart } from '../context/CartContext'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { isAuthenticated, createSale } from '../services/api'
+import { isAuthenticated, createSale, getCurrentUser } from '../services/api'
 
 export default function Carrito() {
   const { items, removeItem, updateQty, clearCart, totalPrice } = useCart()
@@ -15,9 +15,12 @@ export default function Carrito() {
       return
     }
 
+    const user = getCurrentUser()
     setLoading(true)
     try {
       const payload = {
+        customer: user ? user.name : 'Cliente Web',
+        type: 'external',
         items: items.map(i => ({ product_id: i.id, quantity: i.qty, price: i.precio }))
       }
       await createSale(payload)
