@@ -1,13 +1,77 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getDashboardStats, isAuthenticated } from '../services/api'
 
-
-
-
+const statsDefecto = [
+  {
+    n: '500+',
+    l: 'Socios activos',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  },
+  {
+    n: '12',
+    l: 'Coaches expertos',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+  },
+  {
+    n: '200+',
+    l: 'Rutinas disponibles',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+  },
+  {
+    n: '8 años',
+    l: 'De trayectoria',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  },
+]
 
 function Dashboard() {
   return <HomeContent />
 }
 
 function HomeContent() {
+  const navigate = useNavigate()
+  const [stats, setStats] = useState(statsDefecto)
+  const [showContactModal, setShowContactModal] = useState(false)
+  const [rating, setRating] = useState(0)
+  const [hoverRating, setHoverRating] = useState(0)
+  const [ratingSubmitted, setRatingSubmitted] = useState(false)
+
+  const handlePlanClick = () => {
+    if (!isAuthenticated()) {
+      navigate('/registro')
+    } else {
+      setShowContactModal(true)
+    }
+  }
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/tienda/productos')
+        if (res.ok) {
+          const data = await res.json()
+          if (data && typeof data.total !== 'undefined') {
+            setStats(prev => prev.map((s, idx) => {
+              if (idx === 2) {
+                return {
+                  ...s,
+                  n: data.total.toString(),
+                  l: 'Productos en tienda'
+                }
+              }
+              return s
+            }))
+          }
+        }
+      } catch (err) {
+        console.error('Error cargando total de productos:', err)
+      }
+    }
+
+    cargarDatos()
+  }, [])
+
   return (
     <>
 
@@ -21,17 +85,19 @@ function HomeContent() {
             ayudarte a cumplir tus objetivos y transformar tu vida.
           </p>
           <div className="home-hero-actions animate-up delay-2">
-            <button type="button" className="gradient-btn big">
+            <button type="button" className="gradient-btn big" onClick={() => navigate('/registro')}>
               Comenzar ahora
             </button>
-            <button type="button" className="pill-btn big">
+            <button type="button" className="pill-btn big" onClick={() => {
+              document.querySelector('.fz-services')?.scrollIntoView({ behavior: 'smooth' })
+            }}>
               Conocer más
             </button>
           </div>
         </div>
       </section>
 
-    
+
       <section className="fz-services">
         <div className="fz-wrap">
           <div className="fz-services-head">
@@ -106,32 +172,11 @@ function HomeContent() {
         </div>
       </section>
 
-      
+
       <div className="fz-stats">
         <div className="fz-wrap">
           <div className="fz-stats-inner">
-            {[
-              {
-                n: '500+',
-                l: 'Socios activos',
-                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              },
-              {
-                n: '12',
-                l: 'Coaches expertos',
-                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              },
-              {
-                n: '200+',
-                l: 'Rutinas disponibles',
-                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              },
-              {
-                n: '8 años',
-                l: 'De trayectoria',
-                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,75,99,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              },
-            ].map((s, idx) => (
+            {stats.map((s, idx) => (
               <div className="fz-stat animate-up" style={{ animationDelay: `${idx * 0.15}s` }} key={s.l}>
                 <div style={{ marginBottom: '0.5rem' }}>{s.icon}</div>
                 <div className="fz-stat-num fz-grad-text" style={{ fontSize: '3rem', fontWeight: 800 }}>{s.n}</div>
@@ -152,19 +197,43 @@ function HomeContent() {
               <p className="fz-copy">Califica FitZone y ayuda a otros a descubrir nuestro gym</p>
 
               <div className="fz-rating-box">
-                <div className="fz-rating-stars">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      className="fz-star"
-                      onClick={() => console.log(`Rating: ${star}`)}
-                      type="button"
+                {ratingSubmitted ? (
+                  <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '0.8rem' }}>🎉</div>
+                    <h4 style={{ color: '#ff8a00', fontWeight: 700, marginBottom: '0.5rem', fontFamily: 'Syne, sans-serif' }}>¡Gracias por tu calificación!</h4>
+                    <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>Tu opinión nos ayuda a seguir mejorando cada día.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="fz-rating-stars">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          className="fz-star"
+                          style={(hoverRating || rating) >= star ? { background: '#ff8a00', color: '#080808', borderColor: '#ff8a00', transform: 'scale(1.1)' } : {}}
+                          onClick={() => setRating(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          type="button"
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                    <button 
+                      className="fz-rating-btn"
+                      onClick={() => {
+                        if (rating > 0) {
+                          setRatingSubmitted(true)
+                        } else {
+                          alert('Por favor selecciona una estrella antes de enviar.')
+                        }
+                      }}
                     >
-                      ★
+                      Enviar calificación
                     </button>
-                  ))}
-                </div>
-                <button className="fz-rating-btn">Enviar calificación</button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -204,7 +273,7 @@ function HomeContent() {
         </div>
       </section>
 
-   
+
       <section className="fz-about">
         <div className="fz-wrap">
           <div className="fz-about-grid">
@@ -296,7 +365,7 @@ function HomeContent() {
               <div className="fz-plan-feat">2 clases grupales / semana</div>
               <div className="fz-plan-feat">Vestuarios y duchas</div>
               <div className="fz-plan-feat">App de seguimiento</div>
-              <button type="button" className="fz-plan-btn">Comenzar</button>
+              <button type="button" className="fz-plan-btn" onClick={handlePlanClick}>Comenzar</button>
             </div>
 
             <div className="fz-plan fz-featured">
@@ -309,7 +378,7 @@ function HomeContent() {
               <div className="fz-plan-feat">Clases ilimitadas</div>
               <div className="fz-plan-feat">1 sesión con coach / mes</div>
               <div className="fz-plan-feat">Descuentos en tienda</div>
-              <button type="button" className="fz-plan-btn fz-plan-btn-featured">Comenzar</button>
+              <button type="button" className="fz-plan-btn fz-plan-btn-featured" onClick={handlePlanClick}>Comenzar</button>
             </div>
 
             <div className="fz-plan">
@@ -321,7 +390,7 @@ function HomeContent() {
               <div className="fz-plan-feat">Nutrición personalizada</div>
               <div className="fz-plan-feat">Coach dedicado</div>
               <div className="fz-plan-feat">Acceso 24/7</div>
-              <button type="button" className="fz-plan-btn">Comenzar</button>
+              <button type="button" className="fz-plan-btn" onClick={handlePlanClick}>Comenzar</button>
             </div>
           </div>
         </div>
@@ -351,12 +420,36 @@ function HomeContent() {
                 <span className="fz-citem-val">Av. Fitness 123, Centro</span>
               </div>
             </div>
-            <button type="button" className="gradient-btn big">
+            <button type="button" className="gradient-btn big" onClick={() => {
+              if (isAuthenticated()) {
+                navigate('/')
+              } else {
+                navigate('/login')
+              }
+            }}>
               Ingresar al sistema
             </button>
           </div>
         </div>
       </section>
+
+      {showContactModal && (
+        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.85)', zIndex: 10000, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }} onClick={() => setShowContactModal(false)}>
+          <div className="modal-content" style={{ background: '#111', border: '1px solid rgba(255, 75, 99, 0.25)', borderRadius: '1rem', padding: '2.5rem', maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+            <button style={{ position: 'absolute', top: '1rem', right: '1.2rem', background: 'none', border: 'none', color: '#64748b', fontSize: '1.5rem', cursor: 'pointer' }} onClick={() => setShowContactModal(false)}>×</button>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📞</div>
+            <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '1.5rem', color: '#f8fafc', marginBottom: '0.8rem' }}>¡Excelente Elección!</h3>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+              Para activar este plan, por favor contáctanos directamente a nuestra línea de atención telefónica o WhatsApp.
+            </p>
+            <div style={{ background: 'rgba(255, 75, 99, 0.08)', border: '1px solid rgba(255, 75, 99, 0.2)', borderRadius: '0.8rem', padding: '1rem', marginBottom: '1.5rem' }}>
+              <span style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#7dd3fc', fontWeight: 700, marginBottom: '0.3rem' }}>Línea Oficial FitZone</span>
+              <a href="tel:+573001234567" style={{ textDecoration: 'none', fontSize: '1.25rem', fontWeight: 800, color: '#ff8a00' }}>+57 300 123 4567</a>
+            </div>
+            <button className="gradient-btn" style={{ width: '100%', borderRadius: '999px', padding: '0.75rem', border: 'none', cursor: 'pointer' }} onClick={() => setShowContactModal(false)}>Entendido</button>
+          </div>
+        </div>
+      )}
     </>
   )
 }

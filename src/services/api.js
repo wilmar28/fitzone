@@ -19,6 +19,34 @@ export const supabase = createClient(
 // HELPERS
 // ════════════════════════════════════════════════════════
 
+const getAuthHeader = () => {
+  const token = localStorage.getItem('fitzone_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+const apiCall = async (endpoint, options = {}) => {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const url = `${baseUrl}${endpoint}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...getAuthHeader(),
+    ...options.headers,
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}))
+    throw new Error(error.message || `HTTP ${response.status}`)
+  }
+
+  return response.json()
+}
+
 const saveSession = (session, user) => {
   if (session?.access_token) {
     localStorage.setItem('fitzone_token', session.access_token)
@@ -30,11 +58,14 @@ const saveSession = (session, user) => {
       JSON.stringify(user)
     )
   }
+
+  window.dispatchEvent(new Event('auth-change'))
 }
 
 const clearSession = () => {
   localStorage.removeItem('fitzone_token')
   localStorage.removeItem('fitzone_user')
+  window.dispatchEvent(new Event('auth-change'))
 }
 
 // ════════════════════════════════════════════════════════
@@ -354,6 +385,93 @@ export const downloadSalesExcel = async () => {
   console.log('Pendiente implementar')
 }
 
+
 export const downloadStockExcel = async () => {
   console.log('Pendiente implementar')
+}
+
+// ════════════════════════════════════════════════════════
+// PLANES
+// ════════════════════════════════════════════════════════
+
+export const getPlanes = async () => {
+  return apiCall('/api/plans')
+}
+
+// ════════════════════════════════════════════════════════
+// EJERCICIOS
+// ════════════════════════════════════════════════════════
+
+export const getEjercicios = async () => {
+  return apiCall('/api/exercises')
+}
+
+// ════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════
+
+export const getDashboardStats = async () => {
+  return apiCall('/api/dashboard')
+}
+
+// ════════════════════════════════════════════════════════
+// PRODUCTOS BACKEND
+// ════════════════════════════════════════════════════════
+
+export const getBackendProducts = async () => {
+  return apiCall('/api/products')
+}
+
+export const createBackendProduct = async (productData) => {
+  return apiCall('/api/products', {
+    method: 'POST',
+    body: JSON.stringify(productData),
+  })
+}
+
+export const updateBackendProduct = async (id, productData) => {
+  return apiCall(`/api/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(productData),
+  })
+}
+
+export const deleteBackendProduct = async (id) => {
+  return apiCall(`/api/products/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+// ════════════════════════════════════════════════════════
+// VENTAS BACKEND
+// ════════════════════════════════════════════════════════
+
+export const getBackendSales = async () => {
+  return apiCall('/api/sales')
+}
+
+// ════════════════════════════════════════════════════════
+// REPORTES
+// ════════════════════════════════════════════════════════
+
+export const downloadReportPdf = async () => {
+  const res = await fetch('http://localhost:8000/api/reports/pdf')
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'reporte-ventas.pdf'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export const downloadReportExcel = async () => {
+  const res = await fetch('http://localhost:8000/api/reports/excel')
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'reporte-ventas.xlsx'
+  a.click()
+  URL.revokeObjectURL(url)
 }

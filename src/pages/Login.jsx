@@ -19,7 +19,12 @@ function Login() {
 
     try {
       await loginUser(email, password)
-      navigate('/')
+      const ADMIN_EMAILS = ['wrondonbarrero@gmail.com']
+      if (ADMIN_EMAILS.includes(email)) {
+        navigate('/admin')
+      } else {
+        navigate('/')
+      }
     } catch (err) {
       setError(err.message)
     }

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
@@ -23,15 +23,21 @@ function ProtectedRoute({ children }) {
 // 👑 Ruta admin
 function AdminRoute({ children }) {
   const session = getCurrentUser()
+  const ADMIN_EMAILS = ['wrondonbarrero@gmail.com']
 
-  if (!session || session.role !== "admin") {
+  if (!session || !ADMIN_EMAILS.includes(session.email)) {
     return <Navigate to="/" />
   }
 
   return children
 }
 
-function App() {
+function AppContent() {
+  const location = useLocation()
+  const isAdminPage = location.pathname.startsWith('/admin')
+  const isAuthPage = location.pathname.startsWith('/login') || location.pathname.startsWith('/registro')
+  const showNavbar = !isAdminPage && !isAuthPage
+
   useEffect(() => {
     const checkToken = async () => {
       if (isAuthenticated()) {
@@ -42,9 +48,8 @@ function App() {
   }, [])
 
   return (
-    <BrowserRouter>
-      <Navbar />
-
+    <>
+      {showNavbar && <Navbar />}
       <Routes>
         {/* Login */}
         <Route path="/login" element={<Login />} />
@@ -77,6 +82,14 @@ function App() {
           }
         />
       </Routes>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   )
 }

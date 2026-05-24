@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import InfoModal from '../components/InfoModal'
 import Card from '../components/Card'
-import { isAuthenticated } from '../services/api'
+import { isAuthenticated, getPlanes } from '../services/api'
 
-const plans = [
+const planesPorDefecto = [
   {
     nombre: 'Plan Básico',
     precio: '$29k',
@@ -50,8 +50,25 @@ const plans = [
 ]
 
 function Planes() {
+  const [plans, setPlans] = useState([])
   const [selectedPlan, setSelectedPlan] = useState(null)
+  const [cargando, setCargando] = useState(true)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const cargarPlanes = async () => {
+      try {
+        const data = await getPlanes()
+        setPlans(data)
+      } catch {
+        setPlans(planesPorDefecto)
+      } finally {
+        setCargando(false)
+      }
+    }
+
+    cargarPlanes()
+  }, [])
 
   const handleSuscribe = (plan) => {
     if (!isAuthenticated()) {
@@ -59,6 +76,10 @@ function Planes() {
       return
     }
     setSelectedPlan(plan)
+  }
+
+  if (cargando) {
+    return <section className="main-shell">Cargando planes...</section>
   }
 
   return (

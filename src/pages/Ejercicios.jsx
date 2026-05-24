@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import InfoModal from '../components/InfoModal'
 import Card from '../components/Card'
+import { getEjercicios } from '../services/api'
 
-const routines = [
+const rutinasDefecto = [
   {
     nombre: 'Rutina de Pecho',
     nivel: 'Intermedio',
@@ -42,10 +43,31 @@ const routines = [
 ]
 
 function Ejercicios() {
+  const [rutinas, setRutinas] = useState([])
   const [selectedRoutine, setSelectedRoutine] = useState(null)
+  const [cargando, setCargando] = useState(true)
+
+  useEffect(() => {
+    const cargarEjercicios = async () => {
+      try {
+        const data = await getEjercicios()
+        setRutinas(data)
+      } catch {
+        setRutinas(rutinasDefecto)
+      } finally {
+        setCargando(false)
+      }
+    }
+
+    cargarEjercicios()
+  }, [])
 
   const handleSeeRoutine = (routine) => {
     setSelectedRoutine(routine)
+  }
+
+  if (cargando) {
+    return <section className="main-shell">Cargando rutinas...</section>
   }
 
   return (
@@ -56,7 +78,7 @@ function Ejercicios() {
         <p className="fz-copy">Programas diseñados por expertos para cada nivel.</p>
       </div>
       <div className="grid-cards two-cols">
-        {routines.map((routine) => (
+        {rutinas.map((routine) => (
           <div key={routine.nombre} className="animate-up">
             <Card
               image={routine.image}

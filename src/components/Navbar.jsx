@@ -9,8 +9,14 @@ function Navbar() {
   const { totalItems } = useCart()
 
   useEffect(() => {
-    const session = getCurrentUser()
-    if (session) setUser(session)
+    const loadUser = () => {
+      const session = getCurrentUser()
+      setUser(session)
+    }
+
+    loadUser()
+    window.addEventListener('auth-change', loadUser)
+    return () => window.removeEventListener('auth-change', loadUser)
   }, [])
 
   const handleLogout = async () => {
@@ -65,11 +71,11 @@ function Navbar() {
           <div className="nav-user">
 
             <div className="nav-user-avatar">
-              {user.email.charAt(0).toUpperCase()}
+              {(user.user_metadata?.name || user.user_metadata?.full_name || user.email).charAt(0).toUpperCase()}
             </div>
 
             <div className="nav-user-menu">
-              <span className="nav-user-email">{user.email}</span>
+              <span className="nav-user-email">{user.user_metadata?.name || user.user_metadata?.full_name || user.email}</span>
 
               {user.role === "admin" && (
                 <button
