@@ -1,39 +1,35 @@
 import { useCart } from '../context/CartContext'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { isAuthenticated, createSale, getCurrentUser } from '../services/api'
+import { isAuthenticated } from '../services/api'
 
 export default function Carrito() {
-  const { items, removeItem, updateQty, clearCart, totalPrice } = useCart()
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState('')
 
-  const handleCheckout = async () => {
+  const {
+    items,
+    removeItem,
+    updateQty,
+    clearCart,
+    totalPrice
+  } = useCart()
+
+  const navigate = useNavigate()
+
+
+
+  const handleCheckout = () => {
+
     if (!isAuthenticated()) {
       navigate('/login')
       return
     }
 
-    const user = getCurrentUser()
-    setLoading(true)
-    try {
-      const payload = {
-        customer: user ? user.name : 'Cliente Web',
-        type: 'external',
-        items: items.map(i => ({ product_id: i.id, quantity: i.qty, price: i.precio }))
-      }
-      await createSale(payload)
-      setSuccess('¡Compra finalizada con éxito!')
-      setTimeout(() => {
-        clearCart()
-        navigate('/tienda')
-      }, 2500)
-    } catch (err) {
-      alert(err.message || 'Hubo un error al procesar la compra')
-    } finally {
-      setLoading(false)
-    }
+    navigate('/checkout', {
+      state: {
+        items,
+        totalPrice,
+      },
+    })
   }
 
   if (items.length === 0) return (
@@ -93,10 +89,22 @@ export default function Carrito() {
             <span style={{ fontWeight: 700 }}>Total</span>
             <span className="price">${totalPrice.toLocaleString('es-CO')}</span>
           </div>
-          <button onClick={handleCheckout} disabled={loading || success} className="gradient-btn" style={{ width: '100%', padding: '0.85rem', borderRadius: 10, marginBottom: '0.8rem', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-            {loading ? 'Procesando...' : success ? success : 'Proceder al pago'}
-          </button>
-          <button onClick={clearCart} disabled={loading || success} style={{ width: '100%', padding: '0.7rem', borderRadius: 10, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', cursor: 'pointer', fontSize: '0.8rem' }}>
+          <button
+  onClick={handleCheckout}
+  className="gradient-btn"
+  style={{
+    width: '100%',
+    padding: '0.85rem',
+    borderRadius: 10,
+    marginBottom: '0.8rem',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 700
+  }}
+>
+  Proceder al pago
+</button>
+          <button onClick={clearCart}  style={{ width: '100%', padding: '0.7rem', borderRadius: 10, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', cursor: 'pointer', fontSize: '0.8rem' }}>
             Vaciar carrito
           </button>
         </div>

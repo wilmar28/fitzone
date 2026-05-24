@@ -12,6 +12,8 @@ import Galeria from './pages/Galeria'
 import Registro from './pages/Registro'
 import Carrito from './pages/Carrito'
 import Admin from './pages/Admin'
+import Checkout from "./pages/Checkout";
+import PagoExitoso from "./pages/PagoExitoso";
 
 import { isAuthenticated, getCurrentUser, getMe } from './services/api'
 
@@ -81,6 +83,8 @@ function AppContent() {
             </AdminRoute>
           }
         />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/pago-exitoso" element={<PagoExitoso />} />
       </Routes>
     </>
   )

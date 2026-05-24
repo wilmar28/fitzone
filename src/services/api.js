@@ -24,8 +24,15 @@ const getAuthHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-const apiCall = async (endpoint, options = {}) => {
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+export const apiCall = async (
+  endpoint,
+  options = {}
+) => {
+
+  const baseUrl =
+    import.meta.env.VITE_API_URL ||
+    'http://localhost:8000'
+
   const url = `${baseUrl}${endpoint}`
 
   const headers = {
@@ -40,8 +47,14 @@ const apiCall = async (endpoint, options = {}) => {
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.message || `HTTP ${response.status}`)
+    const error = await response
+      .json()
+      .catch(() => ({}))
+
+    throw new Error(
+      error.message ||
+      `HTTP ${response.status}`
+    )
   }
 
   return response.json()
@@ -266,9 +279,30 @@ export const getSaleById = async (id) => {
 export const createSale = async (
   saleData
 ) => {
+
   const { data, error } = await supabase
-    .from('sales')
-    .insert([saleData])
+    .from('ventas')
+    .insert([
+      {
+        id_usuario: 1,
+
+        total: saleData.items.reduce(
+          (acc, item) =>
+            acc + item.price * item.quantity,
+          0
+        ),
+
+        estado: 'pendiente',
+
+        canal: 'web',
+
+        notas: 'Pago desde Wompi',
+
+        reference: saleData.reference,
+
+        items: saleData.items,
+      }
+    ])
     .select()
 
   if (error) {
