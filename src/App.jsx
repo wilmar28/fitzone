@@ -14,6 +14,7 @@ import Carrito from './pages/Carrito'
 import Admin from './pages/Admin'
 import Checkout from "./pages/Checkout";
 import PagoExitoso from "./pages/PagoExitoso";
+import ResetPassword from "./pages/ResetPassword";
 
 import { isAuthenticated, getCurrentUser, getMe } from './services/api'
 
@@ -38,7 +39,8 @@ function AppContent() {
   const location = useLocation()
   const isAdminPage = location.pathname.startsWith('/admin')
   const isAuthPage = location.pathname.startsWith('/login') || location.pathname.startsWith('/registro')
-  const showNavbar = !isAdminPage && !isAuthPage
+  const isResetPage = location.pathname.startsWith('/reset-password')
+  const showNavbar = !isAdminPage && !isAuthPage && !isResetPage
 
   useEffect(() => {
     const checkToken = async () => {
@@ -47,6 +49,14 @@ function AppContent() {
       }
     }
     checkToken()
+  }, [])
+
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('access_token')) {
+      window.location.hash = ''
+      window.location.pathname = '/reset-password'
+    }
   }, [])
 
   return (
@@ -58,6 +68,9 @@ function AppContent() {
 
         {/* Registro */}
         <Route path="/registro" element={<Registro onRegister={() => { }} />} />
+
+        {/* Restablecer contraseña */}
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Carrito */}
         <Route path="/carrito" element={<Carrito />} />
