@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
@@ -37,6 +37,7 @@ function AdminRoute({ children }) {
 
 function AppContent() {
   const location = useLocation()
+  const navigate = useNavigate()
   const isAdminPage = location.pathname.startsWith('/admin')
   const isAuthPage = location.pathname.startsWith('/login') || location.pathname.startsWith('/registro')
   const isResetPage = location.pathname.startsWith('/reset-password')
@@ -54,10 +55,15 @@ function AppContent() {
   useEffect(() => {
     const hash = window.location.hash
     if (hash.includes('access_token')) {
-      window.location.hash = ''
-      window.location.pathname = '/reset-password'
+      const hashParams = new URLSearchParams(hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+
+      if (accessToken && refreshToken) {
+        navigate(`/reset-password?access_token=${accessToken}&refresh_token=${refreshToken}`)
+      }
     }
-  }, [])
+  }, [navigate])
 
   return (
     <>
