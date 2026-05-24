@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { loginUser } from '../services/api'
+import { loginUser, supabase } from '../services/api'
 
 function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [showResetForm, setShowResetForm] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetMessage, setResetMessage] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -27,6 +31,35 @@ function Login() {
       }
     } catch (err) {
       setError(err.message)
+    }
+  }
+
+  const handleResetPassword = async (event) => {
+    event.preventDefault()
+    setResetMessage('')
+    setError('')
+
+    if (!resetEmail) {
+      setError('Por favor ingresa tu email')
+      return
+    }
+
+    setResetLoading(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail)
+      if (error) {
+        throw new Error(error.message)
+      }
+      setResetMessage('Revisa tu correo, te enviamos un enlace para restablecer tu contraseña.')
+      setResetEmail('')
+      setTimeout(() => {
+        setShowResetForm(false)
+        setResetMessage('')
+      }, 4000)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -146,6 +179,25 @@ function Login() {
           Entrar
         </button>
 
+        {/* Link recuperar contraseña */}
+        <p style={{ textAlign: 'center', fontSize: '0.82rem', margin: '0 0 1.2rem' }}>
+          <button
+            type="button"
+            onClick={() => setShowResetForm(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#ff4b63',
+              textDecoration: 'none',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '0.82rem'
+            }}
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </p>
+
         {/* Separador */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', margin: '1.2rem 0', opacity: 0.5 }}>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
@@ -158,6 +210,146 @@ function Login() {
           ¿No tienes cuenta? <Link to="/registro" style={{ color: '#ff4b63', textDecoration: 'none', fontWeight: 600 }}>Regístrate</Link>
         </p>
       </form>
+
+      {/* Modal de recuperación de contraseña */}
+      {showResetForm && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 40,
+          padding: '1rem'
+        }}>
+          <form onSubmit={handleResetPassword} style={{
+            width: '100%',
+            maxWidth: 420,
+            background: 'rgba(15,23,50,0.9)',
+            border: '1px solid rgba(255,75,99,0.2)',
+            borderRadius: '16px',
+            padding: '2.5rem',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.5)'
+          }}>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: '0 0 0.5rem', textAlign: 'center' }}>
+              Recuperar contraseña
+            </h2>
+
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', margin: '0 0 1.5rem' }}>
+              Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña
+            </p>
+
+            {resetMessage && (
+              <div style={{
+                background: 'rgba(34,197,94,0.1)',
+                border: '1px solid rgba(34,197,94,0.3)',
+                borderRadius: '8px',
+                padding: '0.7rem 1rem',
+                color: '#86efac',
+                fontSize: '0.82rem',
+                marginBottom: '1rem'
+              }}>
+                {resetMessage}
+              </div>
+            )}
+
+            {error && (
+              <div style={{
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: '8px',
+                padding: '0.7rem 1rem',
+                color: '#fca5a5',
+                fontSize: '0.82rem',
+                marginBottom: '1rem'
+              }}>
+                {error}
+              </div>
+            )}
+
+            <label style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 500, marginBottom: '0.3rem', display: 'block' }}>
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              placeholder="tu@email.com"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '10px',
+                padding: '0.8rem 1rem',
+                color: 'white',
+                fontSize: '0.88rem',
+                marginBottom: '1.5rem',
+                transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#ff4b63'
+                e.target.style.boxShadow = '0 0 0 3px rgba(255,75,99,0.15)'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(255,255,255,0.1)'
+                e.target.style.boxShadow = 'none'
+              }}
+            />
+
+            <button
+              type="submit"
+              disabled={resetLoading}
+              style={{
+                width: '100%',
+                height: '48px',
+                borderRadius: '10px',
+                border: 'none',
+                background: 'linear-gradient(120deg, #ff4b63, #ff8a00)',
+                color: 'white',
+                fontWeight: 700,
+                cursor: resetLoading ? 'not-allowed' : 'pointer',
+                opacity: resetLoading ? 0.7 : 1,
+                marginBottom: '0.8rem',
+                fontSize: '0.95rem'
+              }}
+            >
+              {resetLoading ? 'Enviando...' : 'Enviar enlace de recuperación'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowResetForm(false)
+                setError('')
+                setResetEmail('')
+              }}
+              style={{
+                width: '100%',
+                height: '48px',
+                borderRadius: '10px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'transparent',
+                color: '#94a3b8',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: '0.95rem',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                e.target.style.color = '#ffffff'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = 'rgba(255,255,255,0.1)'
+                e.target.style.color = '#94a3b8'
+              }}
+            >
+              Volver
+            </button>
+          </form>
+        </div>
+      )}
     </section>
   )
 }
