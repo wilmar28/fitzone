@@ -15,6 +15,7 @@ import Admin from './pages/Admin'
 import Checkout from "./pages/Checkout";
 import PagoExitoso from "./pages/PagoExitoso";
 import ResetPassword from "./pages/ResetPassword";
+import RutinaActiva from "./pages/RutinaActiva";
 
 import { isAuthenticated, getCurrentUser, getMe } from './services/api'
 
@@ -41,7 +42,8 @@ function AppContent() {
   const isAdminPage = location.pathname.startsWith('/admin')
   const isAuthPage = location.pathname.startsWith('/login') || location.pathname.startsWith('/registro')
   const isResetPage = location.pathname.startsWith('/reset-password')
-  const showNavbar = !isAdminPage && !isAuthPage && !isResetPage
+  const isRutinaPage = location.pathname.startsWith('/rutina/')
+  const showNavbar = !isAdminPage && !isAuthPage && !isResetPage && !isRutinaPage
 
   useEffect(() => {
     const checkToken = async () => {
@@ -104,6 +106,7 @@ function AppContent() {
         />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/pago-exitoso" element={<PagoExitoso />} />
+        <Route path="/rutina/:id" element={<RutinaActiva />} />
       </Routes>
     </>
   )

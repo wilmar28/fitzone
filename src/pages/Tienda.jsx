@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
-import { getTiendaCategorias, getTiendaMarcas, getTiendaProductos } from '../services/api'
+import { getTiendaCategorias, getTiendaMarcas, getTiendaProductos, isAuthenticated } from '../services/api'
 
 // Toast notification component
 function Toast({ toasts }) {
@@ -83,6 +84,7 @@ export default function Tienda() {
   })
   const [toasts, setToasts] = useState([])
   const { addItem } = useCart()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchInicial = async () => {
@@ -125,12 +127,12 @@ export default function Tienda() {
         setProductos(res.data || res)
       } catch {
         const mockProductos = [
-          { id: 1, nombre: 'Whey Gold Standard', sku: 'WGS-001', precio: 180000, categoria: 'Proteínas', marca: 'Optimum Nutrition', descripcion: 'Proteína whey de alta calidad con 24g por porción.', stock: 15, estado_stock: 'disponible', margen: 35, imagen: null },
-          { id: 2, nombre: 'Pre-workout C4', sku: 'C4-002', precio: 95000, categoria: 'Pre-entreno', marca: 'MuscleTech', descripcion: 'Energía explosiva para tus entrenamientos.', stock: 3, estado_stock: 'stock bajo', margen: 40, imagen: null },
-          { id: 3, nombre: 'Creatina Monohidrato', sku: 'CRE-003', precio: 75000, categoria: 'Proteínas', marca: 'Dymatize', descripcion: 'Aumenta fuerza y rendimiento muscular.', stock: 0, estado_stock: 'agotado', margen: 30, imagen: null },
-          { id: 4, nombre: 'Multivitamínico Sport', sku: 'MVS-004', precio: 55000, categoria: 'Vitaminas', marca: 'Optimum Nutrition', descripcion: 'Vitaminas y minerales para deportistas.', stock: 20, estado_stock: 'disponible', margen: 45, imagen: null },
-          { id: 5, nombre: 'BCAA 2:1:1', sku: 'BCA-005', precio: 88000, categoria: 'Proteínas', marca: 'MuscleTech', descripcion: 'Aminoácidos esenciales para recuperación muscular.', stock: 8, estado_stock: 'disponible', margen: 38, imagen: null },
-          { id: 6, nombre: 'Guantes de entreno', sku: 'GUA-006', precio: 45000, categoria: 'Accesorios', marca: 'Dymatize', descripcion: 'Guantes con grip reforzado para pesas.', stock: 12, estado_stock: 'disponible', margen: 50, imagen: null },
+          { id: 1, nombre: 'Whey Gold Standard', sku: 'WGS-001', precio: 180000, categoria: 'Proteínas', marca: 'Optimum Nutrition', descripcion: 'Proteína whey de alta calidad con 24g por porción.', stock: 15, estado_stock: 'disponible', margen: 35, imagen_url: null },
+          { id: 2, nombre: 'Pre-workout C4', sku: 'C4-002', precio: 95000, categoria: 'Pre-entreno', marca: 'MuscleTech', descripcion: 'Energía explosiva para tus entrenamientos.', stock: 3, estado_stock: 'stock bajo', margen: 40, imagen_url: null },
+          { id: 3, nombre: 'Creatina Monohidrato', sku: 'CRE-003', precio: 75000, categoria: 'Proteínas', marca: 'Dymatize', descripcion: 'Aumenta fuerza y rendimiento muscular.', stock: 0, estado_stock: 'agotado', margen: 30, imagen_url: null },
+          { id: 4, nombre: 'Multivitamínico Sport', sku: 'MVS-004', precio: 55000, categoria: 'Vitaminas', marca: 'Optimum Nutrition', descripcion: 'Vitaminas y minerales para deportistas.', stock: 20, estado_stock: 'disponible', margen: 45, imagen_url: null },
+          { id: 5, nombre: 'BCAA 2:1:1', sku: 'BCA-005', precio: 88000, categoria: 'Proteínas', marca: 'MuscleTech', descripcion: 'Aminoácidos esenciales para recuperación muscular.', stock: 8, estado_stock: 'disponible', margen: 38, imagen_url: null },
+          { id: 6, nombre: 'Guantes de entreno', sku: 'GUA-006', precio: 45000, categoria: 'Accesorios', marca: 'Dymatize', descripcion: 'Guantes con grip reforzado para pesas.', stock: 12, estado_stock: 'disponible', margen: 50, imagen_url: null },
         ]
         setProductos(mockProductos)
       } finally {
@@ -154,7 +156,11 @@ export default function Tienda() {
   }
 
   const handleAddItem = (p) => {
-    addItem({ id: p.id, nombre: p.nombre, precio: p.precio, imagen: p.imagen })
+    if (!isAuthenticated()) {
+      navigate('/login')
+      return
+    }
+    addItem({ id: p.id, nombre: p.nombre, precio: p.precio, imagen: p.imagen_url })
     showToast(p.nombre)
   }
 
@@ -286,8 +292,8 @@ export default function Tienda() {
             <div key={p.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
 
               {/* Imagen */}
-              {p.imagen ? (
-                <img src={p.imagen} alt={p.nombre}
+              {p.imagen_url ? (
+                <img src={p.imagen_url} alt={p.nombre}
                   style={{
                     width: '100%', height: '185px', objectFit: 'cover',
                     borderRadius: '0.6rem', marginBottom: '0.8rem'

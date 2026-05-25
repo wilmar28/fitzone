@@ -250,6 +250,7 @@ body {
 ══════════════════════════════════ */
  
 .fz-services {
+  background: #080808;
   padding: 3rem 0 2.5rem;
 }
  
@@ -281,7 +282,7 @@ body {
   cursor: default;
 }
  
-.fz-svc:hover { background: #161616; }
+.fz-svc:hover { background: #111; }
  
 .fz-svc-bar {
   position: absolute;
@@ -511,7 +512,10 @@ body {
    ABOUT
 ══════════════════════════════════ */
  
-.fz-about { padding: 3rem 0; }
+.fz-about {
+  background: #080808;
+  padding: 3rem 0;
+}
  
 .fz-about-grid {
   display: grid;
@@ -628,7 +632,10 @@ body {
    MISIÓN
 ══════════════════════════════════ */
  
-.fz-mission { padding: 0 0 3rem; }
+.fz-mission {
+  background: #080808;
+  padding: 0 0 3rem;
+}
  
 .fz-mission-grid {
   display: grid;
@@ -714,7 +721,7 @@ body {
  
 .fz-featured {
   border-color: rgba(255,75,99,0.35) !important;
-  background: #141414 !important;
+  background: #111 !important;
   box-shadow: 0 0 30px rgba(255,75,99,0.06);
 }
  
@@ -820,7 +827,10 @@ body {
    CONTACTO
 ══════════════════════════════════ */
  
-.fz-contact { padding: 3rem 0; }
+.fz-contact {
+  background: #080808;
+  padding: 3rem 0;
+}
  
 .fz-contact-box {
   border-radius: 0.9rem;
@@ -1167,7 +1177,7 @@ body {
  
 .premium-card {
   border: 1px solid rgba(255,138,0,0.3);
-  background: #121010;
+  background: #111;
   position: relative;
 }
  

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 import { getCurrentUser, logoutUser } from "../services/api"
 import { useEffect, useState } from "react"
 import { useCart } from "../context/CartContext"
@@ -6,6 +6,7 @@ import { useCart } from "../context/CartContext"
 function Navbar() {
   const [user, setUser] = useState(null)
   const navigate = useNavigate()
+  const location = useLocation()
   const { totalItems } = useCart()
 
   useEffect(() => {
@@ -25,17 +26,27 @@ function Navbar() {
     navigate("/login")
   }
 
+  const navLinkStyle = (path) => {
+    const isActive = location.pathname === path
+    return {
+      borderBottom: isActive ? '2px solid #ff4b63' : '2px solid transparent',
+      color: isActive ? '#ffffff' : undefined,
+      borderRadius: isActive ? '0' : undefined,
+      paddingBottom: '0.25rem',
+    }
+  }
+
   return (
     <nav className="navbar glass-effect">
 
       <Link to="/" className="brand-link">FitZone</Link>
 
       <div className="nav-links">
-        <Link className="nav-link" to="/">Inicio</Link>
-        <Link className="nav-link" to="/planes">Planes</Link>
-        <Link className="nav-link" to="/ejercicios">Ejercicios</Link>
-        <Link className="nav-link" to="/tienda">Tienda</Link>
-        <Link className="nav-link" to="/galeria">Galeria</Link>
+        <Link className="nav-link" to="/"          style={navLinkStyle('/')}>Inicio</Link>
+        <Link className="nav-link" to="/planes"    style={navLinkStyle('/planes')}>Planes</Link>
+        <Link className="nav-link" to="/ejercicios" style={navLinkStyle('/ejercicios')}>Ejercicios</Link>
+        <Link className="nav-link" to="/tienda"    style={navLinkStyle('/tienda')}>Tienda</Link>
+        <Link className="nav-link" to="/galeria"   style={navLinkStyle('/galeria')}>Galeria</Link>
       </div>
 
       <div className="nav-actions">

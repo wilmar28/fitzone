@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getDashboardStats,
@@ -11,6 +11,9 @@ import {
   downloadReportExcel,
   getCurrentUser,
   logoutUser,
+  supabase,
+  getTiendaCategorias,
+  getTiendaMarcas,
 } from '../services/api'
 import './Admin.css'
 
@@ -137,33 +140,77 @@ function ProductsSection({ productos, onRefresh, loading }) {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formSubmitting, setFormSubmitting] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadedFileName, setUploadedFileName] = useState('')
+  const [categorias, setCategorias] = useState([])
+  const [marcas, setMarcas] = useState([])
+  const fileInputRef = useRef(null)
   const [formData, setFormData] = useState({
     nombre: '',
     sku: '',
-    categoria: '',
-    marca: '',
+    id_categoria: '',
+    id_marca: '',
     precio: '',
     stock: '',
     estado: 'activo',
+    imagen_url: '',
+    descripcion: '',
   })
 
+  useEffect(() => {
+    getTiendaCategorias().then(setCategorias).catch(() => setCategorias([]))
+    getTiendaMarcas().then(setMarcas).catch(() => setMarcas([]))
+  }, [])
+
   const resetForm = () => {
-    setFormData({ nombre: '', sku: '', categoria: '', marca: '', precio: '', stock: '', estado: 'activo' })
+    setFormData({ nombre: '', sku: '', id_categoria: '', id_marca: '', precio: '', stock: '', estado: 'activo', imagen_url: '', descripcion: '' })
     setEditingId(null)
+    setUploadedFileName('')
   }
 
   const handleEdit = (producto) => {
     setFormData({
       nombre: producto.nombre || '',
       sku: producto.sku || '',
-      categoria: producto.categoria || '',
-      marca: producto.marca || '',
+      id_categoria: producto.id_categoria ?? producto.categoria_id ?? '',
+      id_marca: producto.id_marca ?? producto.marca_id ?? '',
       precio: producto.precio || '',
       stock: producto.stock || '',
       estado: producto.estado || 'activo',
+      imagen_url: producto.imagen_url || '',
+      descripcion: producto.descripcion || '',
     })
-    setEditingId(producto.id)
+    // Soporta id_producto (backend Laravel) o id (genérico)
+    setEditingId(producto.id_producto ?? producto.id)
     setShowForm(true)
+  }
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const ext = file.name.split('.').pop()
+    const fileName = `producto-${Date.now()}.${ext}`
+
+    setUploading(true)
+    try {
+      const { data, error } = await supabase.storage
+        .from('productos')
+        .upload(fileName, file, { upsert: true })
+
+      if (error) throw new Error(error.message)
+
+      const { data: urlData } = supabase.storage
+        .from('productos')
+        .getPublicUrl(data.path)
+
+      setFormData(prev => ({ ...prev, imagen_url: urlData.publicUrl }))
+      setUploadedFileName(file.name)
+    } catch (err) {
+      alert('Error al subir imagen: ' + err.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -177,7 +224,7 @@ function ProductsSection({ productos, onRefresh, loading }) {
       }
       resetForm()
       setShowForm(false)
-      onRefresh()
+      await onRefresh()
     } catch (err) {
       alert('Error: ' + err.message)
     } finally {
@@ -229,18 +276,50 @@ function ProductsSection({ productos, onRefresh, loading }) {
                 />
               </div>
               <div className="form-row">
-                <input
-                  type="text"
-                  placeholder="Categoría"
-                  value={formData.categoria}
-                  onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Marca"
-                  value={formData.marca}
-                  onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                />
+                <select
+                  value={formData.id_categoria}
+                  onChange={(e) => setFormData({ ...formData, id_categoria: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.8rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid rgba(148,163,184,0.25)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#f8fafc',
+                    fontSize: '0.85rem',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="" style={{ background: '#1e293b', color: '#f8fafc' }}>Categoría</option>
+                  {categorias.map((c) => (
+                    <option key={c.id_categoria ?? c.id} value={c.id_categoria ?? c.id} style={{ background: '#1e293b', color: '#f8fafc' }}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={formData.id_marca}
+                  onChange={(e) => setFormData({ ...formData, id_marca: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.8rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid rgba(148,163,184,0.25)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#f8fafc',
+                    fontSize: '0.85rem',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="" style={{ background: '#1e293b', color: '#f8fafc' }}>Marca</option>
+                  {marcas.map((m) => (
+                    <option key={m.id_marca ?? m.id} value={m.id_marca ?? m.id} style={{ background: '#1e293b', color: '#f8fafc' }}>
+                      {m.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-row">
                 <input
@@ -258,8 +337,88 @@ function ProductsSection({ productos, onRefresh, loading }) {
                   required
                 />
               </div>
+              <textarea
+                placeholder="Descripción del producto"
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '0.625rem',
+                  borderRadius: '0.375rem',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#cbd5e1',
+                  fontSize: '0.875rem',
+                  fontFamily: 'inherit',
+                  minHeight: '100px',
+                  marginBottom: '0.75rem',
+                  resize: 'vertical'
+                }}
+              />
+              {/* Subir imagen */}
+              <div style={{ marginBottom: '0.75rem' }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleImageUpload}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.55rem 1rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      background: uploading ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)',
+                      color: uploading ? '#64748b' : '#cbd5e1',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                      whiteSpace: 'nowrap',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    {uploading ? 'Subiendo...' : 'Subir imagen'}
+                  </button>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {uploading ? 'Subiendo imagen...' : uploadedFileName || 'Ningún archivo seleccionado'}
+                  </span>
+                </div>
+              </div>
+              {formData.imagen_url && (
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <img
+                    src={formData.imagen_url}
+                    alt="Vista previa"
+                    onError={(e) => { e.target.style.display = 'none' }}
+                    onLoad={(e) => { e.target.style.display = 'block' }}
+                    style={{
+                      display: 'none',
+                      width: '100%',
+                      maxHeight: '160px',
+                      objectFit: 'cover',
+                      borderRadius: '0.5rem',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  />
+                </div>
+              )}
               <div className="form-actions">
-                <button type="submit" className="btn-primary" disabled={formSubmitting}>
+                <button type="submit" className="btn-primary" disabled={formSubmitting || uploading}>
                   {formSubmitting ? 'Guardando...' : 'Guardar'}
                 </button>
                 <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
@@ -287,7 +446,7 @@ function ProductsSection({ productos, onRefresh, loading }) {
           </thead>
           <tbody>
             {productos.map((p) => (
-              <tr key={p.id}>
+              <tr key={p.id_producto ?? p.id}>
                 <td>{p.nombre}</td>
                 <td>{p.sku}</td>
                 <td>{p.categoria || '-'}</td>
@@ -305,7 +464,7 @@ function ProductsSection({ productos, onRefresh, loading }) {
                   <button className="action-btn edit" onClick={() => handleEdit(p)} title="Editar">
                     <IconEdit />
                   </button>
-                  <button className="action-btn delete" onClick={() => handleDelete(p.id)} title="Eliminar">
+                  <button className="action-btn delete" onClick={() => handleDelete(p.id_producto ?? p.id)} title="Eliminar">
                     <IconTrash />
                   </button>
                 </td>
@@ -429,14 +588,24 @@ export default function Admin() {
     setLoading(true)
     try {
       const [statsData, productosData, ventasData] = await Promise.all([
-        getDashboardStats().catch(() => ({ totalVentas: 0, totalProductos: 6, totalUsuarios: 0, totalOrdenes: 0 })),
+        getDashboardStats().catch(() => ({ totalVentas: 0, totalProductos: 0, totalUsuarios: 0, totalOrdenes: 0 })),
         getBackendProducts().catch(() => []),
         getBackendSales().catch(() => []),
       ])
 
-      setStats(statsData || { totalVentas: 0, totalProductos: 6, totalUsuarios: 0, totalOrdenes: 0 })
-      setProductos(productosData || [])
-      setVentas(ventasData || [])
+      setStats(statsData || { totalVentas: 0, totalProductos: 0, totalUsuarios: 0, totalOrdenes: 0 })
+
+      // El endpoint puede devolver un objeto envolvente o un array directo
+      const productosArray = Array.isArray(productosData)
+        ? productosData
+        : productosData?.data || productosData?.products || productosData?.productos || []
+      setProductos(productosArray)
+
+      // Igual para ventas
+      const ventasArray = Array.isArray(ventasData)
+        ? ventasData
+        : ventasData?.data || ventasData?.sales || ventasData?.ventas || []
+      setVentas(ventasArray)
     } catch (err) {
       console.error('Error cargando datos:', err)
     } finally {
@@ -476,12 +645,24 @@ export default function Admin() {
         <div className="sidebar-footer">
           {adminUser && (
             <div className="sidebar-user-info" style={{ marginBottom: '1.25rem', padding: '0 0.5rem' }}>
-              <div style={{ fontWeight: 600, color: '#f8fafc', fontSize: '0.88rem', marginBottom: '0.25rem' }}>
-                {adminUser.user_metadata?.name || adminUser.user_metadata?.full_name || 'Administrador'}
-              </div>
-              <div style={{ color: '#94a3b8', fontSize: '0.78rem', wordBreak: 'break-all' }}>
-                {adminUser.email}
-              </div>
+              {(() => {
+                const displayName =
+                  adminUser.user_metadata?.full_name ||
+                  adminUser.user_metadata?.name ||
+                  null
+                return (
+                  <>
+                    <div style={{ fontWeight: 600, color: '#f8fafc', fontSize: '0.88rem', marginBottom: '0.25rem' }}>
+                      {displayName || adminUser.email}
+                    </div>
+                    {displayName && (
+                      <div style={{ color: '#94a3b8', fontSize: '0.78rem', wordBreak: 'break-all' }}>
+                        {adminUser.email}
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           )}
           <button className="btn-logout" onClick={handleLogout}>

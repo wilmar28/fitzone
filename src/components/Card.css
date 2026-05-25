@@ -1,5 +1,5 @@
 .modern-card {
-  background: linear-gradient(160deg, rgba(16, 28, 55, 0.94), rgba(26, 43, 80, 0.86));
+  background: linear-gradient(160deg, rgba(13, 13, 13, 0.94), rgba(8, 8, 8, 0.86));
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 1rem;
   overflow: hidden;
@@ -17,7 +17,7 @@
 
 .premium-card {
   border: 1px solid rgba(255, 138, 0, 0.4);
-  background: linear-gradient(160deg, rgba(25, 20, 20, 0.94), rgba(40, 20, 30, 0.86));
+  background: linear-gradient(160deg, rgba(13, 13, 13, 0.94), rgba(8, 8, 8, 0.86));
   position: relative;
 }
 

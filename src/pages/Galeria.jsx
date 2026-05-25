@@ -1,12 +1,27 @@
 import { useState } from 'react'
 
 const photos = [
-  { url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80', title: 'Zona de Pesas Libres' },
-  { url: 'https://images.unsplash.com/photo-1576678927484-cc907957088c?auto=format&fit=crop&w=1200&q=80', title: 'Equipamiento Cardiovascular' },
-  { url: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80', title: 'Entrenamiento Funcional' },
-  { url: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1200&q=80', title: 'Zona de Máquinas' },
-  { url: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=1200&q=80', title: 'Salón de Clases Grupales' },
-  { url: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1200&q=80', title: 'Espacios de Estiramiento' },
+  { id: 1,  url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80', title: 'Sala de pesas' },
+  { id: 2,  url: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80', title: 'Entrenamiento funcional' },
+  { id: 3,  url: 'https://images.unsplash.com/photo-1538805060514-97d9cc17730c?auto=format&fit=crop&w=800&q=80', title: 'Cardio' },
+  { id: 4,  url: 'https://images.unsplash.com/photo-1652363722833-509b3aac287b?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', title: 'Press de banca' },
+  { id: 5,  url: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=800&q=80', title: 'Zona de pesas' },
+  { id: 6,  url: 'https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?auto=format&fit=crop&w=800&q=80', title: 'HIIT' },
+  { id: 7,  url: 'https://images.unsplash.com/photo-1647438174616-7bc61ca38455?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', title: 'Saltar cuerda' },
+  { id: 8,  url: 'https://images.unsplash.com/photo-1534787238916-9ba6764efd4f?auto=format&fit=crop&w=800&q=80', title: 'Spinning' },
+  { id: 9,  url: 'https://images.unsplash.com/photo-1588286840104-8957b019727f?auto=format&fit=crop&w=800&q=80', title: 'Yoga' },
+  { id: 10, url: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=800&q=80', title: 'Running' },
+  { id: 11, url: 'https://images.unsplash.com/photo-1622599511051-16f55a1234d0?q=80&w=436&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', title: 'Boxeo' },
+  { id: 12, url: 'https://images.unsplash.com/photo-1632077804406-188472f1a810?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', title: 'Kettlebell' },
+  { id: 13, url: 'https://plus.unsplash.com/premium_photo-1663134059475-5976ce4cc2d8?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', title: 'Dominadas' },
+  { id: 14, url: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=800&q=80', title: 'Suplementos' },
+  { id: 15, url: 'https://images.unsplash.com/photo-1585475686930-8fcb2728eb6b?q=80&w=435&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', title: 'Accesorios fitness' },
+  { id: 16, url: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=800&q=80', title: 'Sentadillas' },
+  { id: 17, url: 'https://plus.unsplash.com/premium_photo-1664298367434-0408974ab0bb?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', title: 'Peso muerto' },
+  { id: 18, url: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80', title: 'Entrenamiento en grupo' },
+  { id: 19, url: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&w=800&q=80', title: 'Motivación' },
+  { id: 20, url: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=800&q=80', title: 'Estiramiento' },
+  { id: 21, url: 'https://images.unsplash.com/photo-1571019613576-2b22c76fd955?auto=format&fit=crop&w=800&q=80', title: 'Abdominales' },
 ]
 
 function Galeria() {
@@ -22,11 +37,11 @@ function Galeria() {
         </p>
       </div>
       <div className="gallery-grid">
-        {photos.map((photo, idx) => (
+        {photos.map((photo) => (
           <div 
-            key={idx} 
+            key={photo.id} 
             className="gallery-item animate-up" 
-            style={{ animationDelay: `${idx * 0.1}s` }}
+            style={{ animationDelay: `${photo.id * 0.05}s` }}
             onClick={() => setSelectedPhoto(photo)}
           >
             <img src={photo.url} alt={photo.title} className="gallery-photo" />

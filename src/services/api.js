@@ -171,78 +171,35 @@ export const getDashboard = async () => {
 
 // ════════════════════════════════════════════════════════
 // PRODUCTOS
-// TABLA: products
+// Usa el backend Laravel — sin Supabase
 // ════════════════════════════════════════════════════════
 
 export const getProducts = async () => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
+  return apiCall('/api/products')
 }
 
 export const getProductById = async (id) => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
+  return apiCall(`/api/products/${id}`)
 }
 
-export const createProduct = async (
-  productData
-) => {
-  const { data, error } = await supabase
-    .from('products')
-    .insert([productData])
-    .select()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
+export const createProduct = async (productData) => {
+  return apiCall('/api/products', {
+    method: 'POST',
+    body: JSON.stringify(productData),
+  })
 }
 
-export const updateProduct = async (
-  id,
-  productData
-) => {
-  const { data, error } = await supabase
-    .from('products')
-    .update(productData)
-    .eq('id', id)
-    .select()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
+export const updateProduct = async (id, productData) => {
+  return apiCall(`/api/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(productData),
+  })
 }
 
 export const deleteProduct = async (id) => {
-  const { error } = await supabase
-    .from('products')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return true
+  return apiCall(`/api/products/${id}`, {
+    method: 'DELETE',
+  })
 }
 
 // ════════════════════════════════════════════════════════
@@ -348,59 +305,32 @@ export const getPrestamos = async () => {
 
 // ════════════════════════════════════════════════════════
 // TIENDA PÚBLICA
-// TABLA: products
+// Usa el backend Laravel — sin Supabase
 // ════════════════════════════════════════════════════════
 
-export const getTiendaProductos = async () => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
+export const getTiendaProductos = async (params = {}) => {
+  const query = new URLSearchParams()
+  if (params.search)       query.set('search',       params.search)
+  if (params.categoria_id) query.set('categoria_id', params.categoria_id)
+  if (params.marca_id)     query.set('marca_id',     params.marca_id)
+  if (params.orden)        query.set('orden',        params.orden)
+  const qs = query.toString()
+  const data = await apiCall(`/api/tienda/productos${qs ? `?${qs}` : ''}`)
+  return data.productos || data
 }
 
-export const getTiendaProducto = async (
-  id
-) => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
+export const getTiendaProducto = async (id) => {
+  return apiCall(`/api/tienda/productos/${id}`)
 }
 
 export const getTiendaCategorias = async () => {
-  const { data, error } = await supabase
-    .from('categorias')
-    .select('*')
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
+  const data = await apiCall('/api/tienda/categorias')
+  return data.categorias || []
 }
 
 export const getTiendaMarcas = async () => {
-  const { data, error } = await supabase
-    .from('marcas')
-    .select('*')
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
+  const data = await apiCall('/api/tienda/marcas')
+  return data.marcas || []
 }
 
 // ════════════════════════════════════════════════════════
@@ -441,6 +371,23 @@ export const getEjercicios = async () => {
 }
 
 // ════════════════════════════════════════════════════════
+// RUTINAS
+// ════════════════════════════════════════════════════════
+
+export const getRutinas = async () => {
+  const data = await apiCall('/api/rutinas')
+  // El endpoint devuelve { success: true, rutinas: [...] }
+  // Cada rutina tiene ejercicios como string JSON → parsear
+  const rutinas = data.rutinas.map((r) => ({
+    ...r,
+    ejercicios: typeof r.ejercicios === 'string'
+      ? JSON.parse(r.ejercicios)
+      : r.ejercicios,
+  }))
+  return rutinas
+}
+
+// ════════════════════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════════════════════
 
@@ -449,31 +396,27 @@ export const getDashboardStats = async () => {
 }
 
 // ════════════════════════════════════════════════════════
-// PRODUCTOS BACKEND
+// PRODUCTOS BACKEND (aliases — apuntan a getProducts/etc.)
 // ════════════════════════════════════════════════════════
 
-export const getBackendProducts = async () => {
-  return apiCall('/api/products')
-}
+export const getBackendProducts     = getProducts
+export const createBackendProduct   = createProduct
+export const deleteBackendProduct   = deleteProduct
 
-export const createBackendProduct = async (productData) => {
-  return apiCall('/api/products', {
-    method: 'POST',
-    body: JSON.stringify(productData),
-  })
-}
-
-export const updateBackendProduct = async (id, productData) => {
-  return apiCall(`/api/products/${id}`, {
+// updateBackendProduct no usa apiCall porque el backend devuelve text/html
+// en respuestas 200, lo que hace fallar a response.json()
+export const updateBackendProduct = async (id, data) => {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const res = await fetch(`${baseUrl}/api/products/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(productData),
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(data),
   })
-}
-
-export const deleteBackendProduct = async (id) => {
-  return apiCall(`/api/products/${id}`, {
-    method: 'DELETE',
-  })
+  if (!res.ok) throw new Error(`Error actualizando producto: HTTP ${res.status}`)
+  return { success: true }
 }
 
 // ════════════════════════════════════════════════════════
