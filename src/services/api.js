@@ -325,12 +325,20 @@ export const getTiendaProducto = async (id) => {
 
 export const getTiendaCategorias = async () => {
   const data = await apiCall('/api/tienda/categorias')
-  return data.categorias || []
+  console.log('api.js - getTiendaCategorias raw response:', data)
+  // Manejar diferentes formatos: array directo, objeto con .categorias, o con .data
+  const result = Array.isArray(data) ? data : (data?.categorias || data?.data || [])
+  console.log('api.js - getTiendaCategorias processed:', result)
+  return result
 }
 
 export const getTiendaMarcas = async () => {
   const data = await apiCall('/api/tienda/marcas')
-  return data.marcas || []
+  console.log('api.js - getTiendaMarcas raw response:', data)
+  // Manejar diferentes formatos: array directo, objeto con .marcas, o con .data
+  const result = Array.isArray(data) ? data : (data?.marcas || data?.data || [])
+  console.log('api.js - getTiendaMarcas processed:', result)
+  return result
 }
 
 // ════════════════════════════════════════════════════════
@@ -392,7 +400,16 @@ export const getRutinas = async () => {
 // ════════════════════════════════════════════════════════
 
 export const getDashboardStats = async () => {
-  return apiCall('/api/dashboard')
+  const res = await fetch('http://localhost:8000/api/dashboard')
+  const json = await res.json()
+  const d = json.data || json
+  console.log('dashboard data:', d)
+  return {
+    totalVentas: d.total_ventas || 0,
+    totalProductos: d.total_productos_activos || 0,
+    totalUsuarios: d.total_usuarios || 0,
+    totalOrdenes: d.total_ordenes || 0,
+  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -451,4 +468,44 @@ export const downloadReportExcel = async () => {
   a.download = 'reporte-ventas.xlsx'
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// ════════════════════════════════════════════════════════
+// CALIFICACIONES
+// TABLA: ratings
+// ════════════════════════════════════════════════════════
+
+export const saveRating = async (userId, rating) => {
+  const { data, error } = await supabase
+    .from('ratings')
+    .insert({ user_id: userId, rating: rating })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export const getRatingsStats = async () => {
+  const { data, error } = await supabase
+    .from('ratings')
+    .select('rating')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const total = data.length
+  const promedio = total > 0
+    ? (data.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1)
+    : 0
+
+  const breakdown = [5, 4, 3, 2, 1].map(star => ({
+    stars: star,
+    count: data.filter(r => r.rating === star).length,
+    percentage: total > 0 ? Math.round((data.filter(r => r.rating === star).length / total) * 100) : 0
+  }))
+
+  return { total, promedio, data, breakdown }
 }

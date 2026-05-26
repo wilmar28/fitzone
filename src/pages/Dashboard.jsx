@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getDashboardStats, isAuthenticated } from '../services/api'
+import { getDashboardStats, isAuthenticated, getCurrentUser, saveRating, getRatingsStats, supabase } from '../services/api'
 
 const statsDefecto = [
   {
@@ -36,6 +36,8 @@ function HomeContent() {
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const [ratingSubmitted, setRatingSubmitted] = useState(false)
+  const [ratingsStats, setRatingsStats] = useState({ total: 0, promedio: 0, breakdown: [] })
+  const [isLoadingRatings, setIsLoadingRatings] = useState(false)
 
   const handlePlanClick = () => {
     if (!isAuthenticated()) {
@@ -69,7 +71,41 @@ function HomeContent() {
       }
     }
 
+    const cargarCalificaciones = async () => {
+      try {
+        setIsLoadingRatings(true)
+        const { total, promedio, breakdown } = await getRatingsStats()
+        setRatingsStats({ total, promedio, breakdown })
+
+        const user = getCurrentUser()
+        if (user?.id) {
+          // Verificar si ya calificó en BD o en localStorage
+          const yaCalificoLocal = localStorage.getItem('fitzone_rated_' + user.id)
+          if (yaCalificoLocal) {
+            setRatingSubmitted(true)
+            setIsLoadingRatings(false)
+            return
+          }
+
+          const { data } = await supabase
+            .from('ratings')
+            .select('id')
+            .eq('user_id', user.id)
+
+          if (data && data.length > 0) {
+            setRatingSubmitted(true)
+            localStorage.setItem('fitzone_rated_' + user.id, 'true')
+          }
+        }
+      } catch (err) {
+        console.error('Error cargando calificaciones:', err)
+      } finally {
+        setIsLoadingRatings(false)
+      }
+    }
+
     cargarDatos()
+    cargarCalificaciones()
   }, [])
 
   return (
@@ -220,11 +256,33 @@ function HomeContent() {
                         </button>
                       ))}
                     </div>
-                    <button 
+                    <button
                       className="fz-rating-btn"
-                      onClick={() => {
+                      onClick={async () => {
                         if (rating > 0) {
-                          setRatingSubmitted(true)
+                          try {
+                            if (!isAuthenticated()) {
+                              navigate('/login')
+                              return
+                            }
+
+                            const user = getCurrentUser()
+                            if (!user?.id) {
+                              navigate('/login')
+                              return
+                            }
+
+                            await saveRating(user.id, rating)
+                            localStorage.setItem('fitzone_rated_' + user.id, 'true')
+                            setRatingSubmitted(true)
+                            setRating(0)
+
+                            const { total, promedio, breakdown } = await getRatingsStats()
+                            setRatingsStats({ total, promedio, breakdown })
+                          } catch (err) {
+                            console.error('Error guardando calificación:', err)
+                            alert('Error al guardar tu calificación. Intenta de nuevo.')
+                          }
                         } else {
                           alert('Por favor selecciona una estrella antes de enviar.')
                         }
@@ -240,21 +298,15 @@ function HomeContent() {
             <div className="fz-ratings-stats">
               <div className="fz-ratings-display">
                 <div className="fz-rating-average">
-                  <div className="fz-rating-number">4.9</div>
+                  <div className="fz-rating-number">{ratingsStats.promedio}</div>
                   <div className="fz-rating-stars-display">
                     ★★★★★
                   </div>
-                  <div className="fz-rating-count">1,243 calificaciones</div>
+                  <div className="fz-rating-count">{ratingsStats.total.toLocaleString()} calificaciones</div>
                 </div>
 
                 <div className="fz-rating-breakdown">
-                  {[
-                    { stars: 5, percentage: 85 },
-                    { stars: 4, percentage: 10 },
-                    { stars: 3, percentage: 3 },
-                    { stars: 2, percentage: 1 },
-                    { stars: 1, percentage: 1 },
-                  ].map((item) => (
+                  {ratingsStats.breakdown.map((item) => (
                     <div className="fz-rating-bar-item" key={item.stars}>
                       <span className="fz-rating-label">{item.stars}★</span>
                       <div className="fz-rating-bar">
