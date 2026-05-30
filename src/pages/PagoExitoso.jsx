@@ -18,15 +18,48 @@ export default function PagoExitoso() {
 
     console.log("Wompi params:", { id, status, ref });
 
-    if (status === "APPROVED") {
-      clearCart();
-      setEstado("aprobado");
-      setTransaccion({ id, ref });
-    } else if (status === "DECLINED") {
-      setEstado("rechazado");
-    } else if (status === "PENDING") {
-      setEstado("pendiente");
-      setTransaccion({ id, ref });
+    if (id) {
+      if (status) {
+        if (status === "APPROVED") {
+          clearCart();
+          setEstado("aprobado");
+          setTransaccion({ id, ref });
+        } else if (status === "DECLINED") {
+          setEstado("rechazado");
+        } else if (status === "PENDING") {
+          setEstado("pendiente");
+          setTransaccion({ id, ref });
+        }
+      } else {
+        // Si solo viene el id de transacción, consultamos a la API de Wompi
+        const publicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY || "pub_test_SWXiGmK0jWjoVDMDchqlLmo81OEwgmtp";
+        const isSandbox = publicKey.startsWith("pub_test");
+        const baseUrl = isSandbox ? "https://sandbox.wompi.co/v1" : "https://production.wompi.co/v1";
+
+        fetch(`${baseUrl}/transactions/${id}`)
+          .then(res => res.json())
+          .then(body => {
+            const tx = body.data;
+            if (tx) {
+              if (tx.status === "APPROVED") {
+                clearCart();
+                setEstado("aprobado");
+                setTransaccion({ id, ref: tx.reference });
+              } else if (tx.status === "DECLINED" || tx.status === "VOIDED" || tx.status === "ERROR") {
+                setEstado("rechazado");
+              } else if (tx.status === "PENDING") {
+                setEstado("pendiente");
+                setTransaccion({ id, ref: tx.reference });
+              }
+            } else {
+              setEstado("directo");
+            }
+          })
+          .catch(err => {
+            console.error("Error fetching Wompi transaction:", err);
+            setEstado("directo");
+          });
+      }
     } else {
       // Sin parámetros — acceso directo a la página
       setEstado("directo");

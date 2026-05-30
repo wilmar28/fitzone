@@ -15,60 +15,97 @@ export default function Checkout() {
 
   const [loading, setLoading] = useState(false);
 
+  const loadWompiScript = () => {
+    return new Promise((resolve) => {
+      if (window.WidgetCheckout) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.wompi.co/widget.js";
+      script.async = true;
+      script.onload = () => resolve(true);
+      document.body.appendChild(script);
+    });
+  };
+
   const pagarConWompi = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const reference     = "FITZONE_" + Date.now();
-    const amountInCents = totalPrice * 100;
-    const currency      = "COP";
+      const reference     = "FITZONE_" + Date.now();
+      const parsedPrice = (priceVal) => {
+        if (typeof priceVal === "number") return priceVal;
+        if (!priceVal) return 0;
+        let clean = priceVal.toString().replace(/[^0-9kK]/g, "");
+        if (clean.toLowerCase().includes("k")) {
+          return parseInt(clean) * 1000;
+        }
+        return parseInt(clean) || 0;
+      };
+      const amountInCents = parsedPrice(totalPrice) * 100;
+      const currency      = "COP";
 
-    // 1. Guardar venta
-    await createSale({
-      total:     totalPrice,
-      estado:    "pendiente",
-      canal:     "wompi",
-      reference,
-      items: items.map(i => ({
-        product_id: i.id,
-        quantity:   i.qty,
-        price:      i.precio,
-      })),
-    });
-
-    // 2. Obtener firma
-    const response = await apiCall("/api/wompi/signature", {
-      method: "POST",
-      body: JSON.stringify({
+      // 1. Guardar venta
+      await createSale({
+        total:     totalPrice,
+        estado:    "pendiente",
+        canal:     "wompi",
         reference,
-        amount_in_cents: amountInCents,
-        currency,
-      }),
-    });
+        items: items.map(i => ({
+          product_id: i.id,
+          quantity:   i.qty,
+          price:      i.precio,
+        })),
+      });
 
-    const signature = response.signature;
-    const publicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY;
+      // 2. Obtener firma y configuracion del checkout desde Laravel
+      const response = await apiCall("/api/wompi/checkout", {
+        method: "POST",
+        body: JSON.stringify({
+          reference,
+          amount_in_cents: amountInCents,
+          currency,
+        }),
+      });
 
-    // 3. Construir URL manualmente — NO usar URLSearchParams
-    //    porque codifica ":" a "%3A" y Wompi lo rechaza
-    const wompiUrl =
-      `https://checkout.wompi.co/p/?` +
-      `public-key=${publicKey}` +
-      `&currency=${currency}` +
-      `&amount-in-cents=${amountInCents}` +
-      `&reference=${reference}` +
-      `&signature:integrity=${signature}` +
-      `&redirect-url=${encodeURIComponent("http://localhost:5173/pago-exitoso")}`;
+      const { publicKey, signature } = response;
 
-    console.log("Redirigiendo a:", wompiUrl);
-    window.location.href = wompiUrl;
+      // Cargar script de Wompi dinamicamente
+      await loadWompiScript();
 
-  } catch (error) {
-    console.error("ERROR WOMPI:", error);
-    alert("Error al iniciar el pago: " + error.message);
-    setLoading(false);
-  }
-};
+      if (!window.WidgetCheckout) {
+        throw new Error("No se pudo cargar el SDK de Wompi.");
+      }
+
+      // 3. Inicializar y abrir el widget
+      const checkout = new window.WidgetCheckout({
+        currency: currency,
+        amountInCents: amountInCents,
+        reference: reference,
+        publicKey: publicKey,
+        signature: {
+          integrity: signature
+        },
+        redirectUrl: "http://localhost:5173/pago-exitoso"
+      });
+
+      checkout.open((result) => {
+        const transaction = result.transaction;
+        console.log("Wompi widget callback:", transaction);
+        if (transaction) {
+          navigate(`/pago-exitoso?id=${transaction.id}&status=${transaction.status}&reference=${reference}`);
+        } else {
+          navigate(`/pago-exitoso?reference=${reference}`);
+        }
+      });
+
+    } catch (error) {
+      console.error("ERROR WOMPI:", error);
+      alert("Error al iniciar el pago: " + error.message);
+      setLoading(false);
+    }
+  };
 
   // ── Render ──────────────────────────────────────────
   return (

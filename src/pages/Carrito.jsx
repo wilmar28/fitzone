@@ -20,6 +20,11 @@ export default function Carrito() {
   const handleCheckout = () => {
 
     if (!isAuthenticated()) {
+      localStorage.setItem('intended_purchase', JSON.stringify({
+        type: 'cart',
+        items,
+        totalPrice
+      }))
       navigate('/login')
       return
     }

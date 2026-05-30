@@ -72,6 +72,10 @@ function Planes() {
 
   const handleSuscribe = (plan) => {
     if (!isAuthenticated()) {
+      localStorage.setItem('intended_purchase', JSON.stringify({
+        type: 'plan',
+        plan: plan
+      }))
       navigate('/login')
       return
     }
@@ -125,7 +129,28 @@ function Planes() {
         }}
         confirmLabel="Comprar ahora"
         onConfirm={() => {
-          // aquí va la lógica de pago
+          const parsedPrice = (priceStr) => {
+            if (typeof priceStr === "number") return priceStr;
+            let clean = priceStr.replace(/[^0-9kK]/g, "");
+            if (clean.toLowerCase().includes("k")) {
+              return parseInt(clean) * 1000;
+            }
+            return parseInt(clean) || 0;
+          };
+          navigate('/checkout', {
+            state: {
+              items: [
+                {
+                  id: `plan_${selectedPlan.nombre.toLowerCase().replace(/\s+/g, "_")}`,
+                  nombre: selectedPlan.nombre,
+                  qty: 1,
+                  precio: parsedPrice(selectedPlan.precio),
+                  isPlan: true
+                }
+              ],
+              totalPrice: parsedPrice(selectedPlan.precio)
+            }
+          });
           setSelectedPlan(null)
         }}
         onClose={() => setSelectedPlan(null)}
