@@ -90,6 +90,14 @@ export const registerUser = async (
   email,
   password
 ) => {
+  // === MOCK PARA PRUEBAS (Evita el rate limit de Supabase) ===
+  const dummyUser = { id: 1, email, user_metadata: { name } }
+  const dummySession = { access_token: "dummy_token_for_testing" }
+  
+  saveSession(dummySession, dummyUser)
+  return { user: dummyUser, session: dummySession }
+
+  /*
   const { data, error } =
     await supabase.auth.signUp({
       email,
@@ -108,6 +116,7 @@ export const registerUser = async (
   saveSession(data.session, data.user)
 
   return data
+  */
 }
 
 export const loginUser = async (
