@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { apiCall, createSale, getCurrentUser } from "../services/api";
+import { apiCall, createSale } from "../services/api";
 import { useCart } from "../context/CartContext";
 
 export default function Checkout() {
@@ -13,40 +13,29 @@ export default function Checkout() {
     totalPrice: 0,
   };
 
-  const [loading, setLoading] = useState(false);
-
-  const loadWompiScript = () => {
-    return new Promise((resolve) => {
-      if (window.WidgetCheckout) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement("script");
-      script.src = "https://checkout.wompi.co/widget.js";
-      script.async = true;
-      script.onload = () => resolve(true);
-      document.body.appendChild(script);
-    });
+  const parsedPrice = (priceVal) => {
+    if (typeof priceVal === "number") return priceVal;
+    if (!priceVal) return 0;
+    let clean = priceVal.toString().replace(/[^0-9kK]/g, "");
+    if (clean.toLowerCase().includes("k")) return parseInt(clean) * 1000;
+    return parseInt(clean) || 0;
   };
 
+  const amountInCents = parsedPrice(totalPrice) * 100;
+  const currency      = "COP";
+
+  const [loading, setLoading]   = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  // ── Al hacer clic: guardar venta y abrir widget ───────
   const pagarConWompi = async () => {
+    if (loading || amountInCents <= 0) return;
+    setLoading(true);
+    setErrorMsg(null);
+    const reference = "FITZONE_" + Date.now();
+
     try {
-      setLoading(true);
-
-      const reference     = "FITZONE_" + Date.now();
-      const parsedPrice = (priceVal) => {
-        if (typeof priceVal === "number") return priceVal;
-        if (!priceVal) return 0;
-        let clean = priceVal.toString().replace(/[^0-9kK]/g, "");
-        if (clean.toLowerCase().includes("k")) {
-          return parseInt(clean) * 1000;
-        }
-        return parseInt(clean) || 0;
-      };
-      const amountInCents = parsedPrice(totalPrice) * 100;
-      const currency      = "COP";
-
-      // 1. Guardar venta
+      // 1. Guardar la venta en la base de datos (Supabase)
       await createSale({
         total:     totalPrice,
         estado:    "pendiente",
@@ -57,9 +46,9 @@ export default function Checkout() {
           quantity:   i.qty,
           price:      i.precio,
         })),
-      });
+      }).catch(err => console.warn("Venta no registrada:", err.message));
 
-      // 2. Obtener firma y configuracion del checkout desde Laravel
+      // 2. Obtener firma y configuración del backend Laravel
       const response = await apiCall("/api/wompi/checkout", {
         method: "POST",
         body: JSON.stringify({
@@ -69,40 +58,31 @@ export default function Checkout() {
         }),
       });
 
-      const { publicKey, signature } = response;
-
-      // Cargar script de Wompi dinamicamente
-      await loadWompiScript();
-
+      // 3. Abrir el Widget de Wompi (sin redirectUrl, manejado con callback)
       if (!window.WidgetCheckout) {
-        throw new Error("No se pudo cargar el SDK de Wompi.");
+        throw new Error("El script de pago de Wompi no se ha cargado. Por favor, recarga la página o desactiva tu bloqueador de publicidad.");
       }
 
-      // 3. Inicializar y abrir el widget
       const checkout = new window.WidgetCheckout({
-        currency: currency,
-        amountInCents: amountInCents,
-        reference: reference,
-        publicKey: publicKey,
-        signature: {
-          integrity: signature
-        },
-        redirectUrl: "http://localhost:5173/pago-exitoso"
+        currency,
+        amountInCents,
+        reference,
+        publicKey: response.publicKey,
+        signature: { integrity: response.signature },
       });
 
       checkout.open((result) => {
+        setLoading(false);
         const transaction = result.transaction;
-        console.log("Wompi widget callback:", transaction);
         if (transaction) {
           navigate(`/pago-exitoso?id=${transaction.id}&status=${transaction.status}&reference=${reference}`);
         } else {
           navigate(`/pago-exitoso?reference=${reference}`);
         }
       });
-
-    } catch (error) {
-      console.error("ERROR WOMPI:", error);
-      alert("Error al iniciar el pago: " + error.message);
+    } catch (err) {
+      console.error("Error al iniciar el pago:", err);
+      setErrorMsg(err.message || "Ocurrió un error al procesar la solicitud de pago.");
       setLoading(false);
     }
   };
@@ -150,17 +130,25 @@ export default function Checkout() {
           <span>${totalPrice.toLocaleString("es-CO")}</span>
         </div>
 
+        {/* Error de carga */}
+        {errorMsg && (
+          <p style={{ color: "#f87171", fontSize: "0.82rem", marginBottom: "1rem" }}>
+            ⚠️ {errorMsg}
+          </p>
+        )}
+
         {/* Botón pagar */}
         <button
           onClick={pagarConWompi}
-          disabled={loading}
+          disabled={loading || amountInCents <= 0}
           className="gradient-btn"
           style={{
             width:        "100%",
             padding:      "1rem",
             border:       "none",
             borderRadius: 10,
-            cursor:       loading ? "not-allowed" : "pointer",
+            cursor:       (loading || amountInCents <= 0) ? "not-allowed" : "pointer",
+            opacity:      (loading || amountInCents <= 0) ? 0.7 : 1,
           }}
         >
           {loading ? "Procesando..." : "Pagar con Wompi"}
