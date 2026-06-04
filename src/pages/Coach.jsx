@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-} from 'recharts'
+
 import { getCurrentUser, logoutUser } from '../services/api'
-import './Coach.css'
+import '../pages/Coach.css'
 
 // ── API helpers ────────────────────────────────────────────────────────────────
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -343,67 +340,24 @@ const tooltipStyle = {
 }
 
 function GraficasSection({ miembros }) {
-  const planConteo = miembros.reduce((acc, m) => {
+  const planes = miembros.reduce((acc, m) => {
     acc[m.plan] = (acc[m.plan] || 0) + 1
     return acc
   }, {})
-  const barData = Object.entries(planConteo).map(([plan, cantidad]) => ({ plan, cantidad }))
-
-  const nivelMock = [
-    { name: 'Básico',      value: 3 },
-    { name: 'Intermedio',  value: 5 },
-    { name: 'Avanzado',    value: 2 },
-  ]
 
   return (
     <div className="admin-section">
-      <h1 className="section-title">Gráficas</h1>
-      <div className="charts-grid">
+      <h1 className="section-title">Estadísticas</h1>
 
-        <div className="chart-card">
-          <h3>Miembros por plan</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={barData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="plan" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip {...tooltipStyle} />
-              <Bar dataKey="cantidad" radius={[4, 4, 0, 0]}>
-                {barData.map((_, i) => (
-                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="chart-card">
-          <h3>Distribución por nivel de rutina</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={nivelMock}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={4}
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                labelLine={false}
-              >
-                {nivelMock.map((_, i) => (
-                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Legend
-                formatter={(value) => <span style={{ color: '#94a3b8', fontSize: '0.82rem' }}>{value}</span>}
-              />
-              <Tooltip {...tooltipStyle} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
+      <div className="stats-grid">
+        {Object.entries(planes).map(([plan, cantidad]) => (
+          <div key={plan} className="stat-card">
+            <div className="stat-content">
+              <p className="stat-label">{plan}</p>
+              <p className="stat-value">{cantidad}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

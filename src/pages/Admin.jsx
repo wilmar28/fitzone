@@ -30,7 +30,6 @@ import {
   Filler
 } from 'chart.js'
 import { Bar, Line, Pie } from 'react-chartjs-2'
-import { BarChart, Bar as RechartsBar, XAxis, YAxis, Tooltip, PieChart, Pie as RechartsPie, Cell, ResponsiveContainer, Legend } from 'recharts'
 import Papa from 'papaparse'
 import './Admin.css'
 

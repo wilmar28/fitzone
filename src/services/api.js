@@ -1,7 +1,6 @@
 // src/services/api.js
 
 import { createClient } from '@supabase/supabase-js'
-console.log(import.meta.env)
 // ════════════════════════════════════════════════════════
 // SUPABASE CONFIG
 // ════════════════════════════════════════════════════════
