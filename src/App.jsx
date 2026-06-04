@@ -40,7 +40,7 @@ function AdminRoute({ children }) {
 // 🏋️ Ruta coach
 function CoachRoute({ children }) {
   const session = getCurrentUser()
-  const role = session?.role || session?.user_metadata?.role
+  const role = localStorage.getItem('fitzone_role') || session?.role || session?.user_metadata?.role
 
   if (!session || (role !== 'coach' && role !== 'Coach')) {
     return <Navigate to="/" />

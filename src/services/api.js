@@ -78,6 +78,7 @@ const saveSession = (session, user) => {
 const clearSession = () => {
   localStorage.removeItem('fitzone_token')
   localStorage.removeItem('fitzone_user')
+  localStorage.removeItem('fitzone_role')
   window.dispatchEvent(new Event('auth-change'))
 }
 
@@ -125,6 +126,20 @@ export const loginUser = async (
   }
 
   saveSession(data.session, data.user)
+
+  // Consulta el backend Laravel para obtener el rol del usuario
+  try {
+    const backendRes = await fetch(
+      (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/me',
+      { headers: { Authorization: `Bearer ${data.session.access_token}` } }
+    )
+    if (backendRes.ok) {
+      const backendData = await backendRes.json()
+      if (backendData?.user?.role) {
+        localStorage.setItem('fitzone_role', backendData.user.role)
+      }
+    }
+  } catch(e) {}
 
   return data
 }

@@ -24,9 +24,12 @@ function Login() {
     try {
       await loginUser(email, password)
       const intended = localStorage.getItem('intended_purchase')
+      const role = localStorage.getItem('fitzone_role')
       const ADMIN_EMAILS = ['wrondonbarrero@gmail.com']
-      if (ADMIN_EMAILS.includes(email)) {
+      if (ADMIN_EMAILS.includes(email) || role === 'admin') {
         navigate('/admin')
+      } else if (role === 'coach') {
+        navigate('/coach')
       } else if (intended) {
         const parsed = JSON.parse(intended)
         localStorage.removeItem('intended_purchase')
