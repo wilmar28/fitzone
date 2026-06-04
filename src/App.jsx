@@ -121,6 +121,7 @@ function AppContent() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/pago-exitoso" element={<PagoExitoso />} />
         <Route path="/rutina/:id" element={<RutinaActiva />} />
+        <Route path="/coach" element={<CoachRoute><Coach /></CoachRoute>} />
       </Routes>
     </>
   )

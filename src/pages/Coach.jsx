@@ -22,7 +22,7 @@ const getCoachMiembros = async () => {
 
 const getRutinaPersonalizada = async (userId) => {
   const token = localStorage.getItem('fitzone_token')
-  const res = await fetch(`${apiBase}/api/coach/miembros/${userId}/rutinas`, {
+  const res = await fetch(`${apiBase}/api/coach/rutina/${userId}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -32,13 +32,18 @@ const getRutinaPersonalizada = async (userId) => {
 
 const crearRutinaPersonalizada = async (payload) => {
   const token = localStorage.getItem('fitzone_token')
-  const res = await fetch(`${apiBase}/api/coach/rutinas`, {
+  const res = await fetch(`${apiBase}/api/coach/rutina/${payload.miembro_id}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      nombre:      payload.nombre,
+      descripcion: payload.descripcion,
+      duracion:    payload.duracion_semanas,
+      nivel:       payload.nivel,
+    }),
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()

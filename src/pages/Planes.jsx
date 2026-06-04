@@ -7,7 +7,7 @@ import { isAuthenticated, getPlanes } from '../services/api'
 const planesPorDefecto = [
   {
     nombre: 'FIT',
-    precio: '$39.900',
+    precio: '$69.900',
     periodo: '/mes',
     descripcion: 'Acceso básico a instalaciones.',
     beneficios: [
@@ -20,7 +20,7 @@ const planesPorDefecto = [
   },
   {
     nombre: 'SMART',
-    precio: '$69.900',
+    precio: '$99.900',
     periodo: '/mes',
     descripcion: 'Plan completo con asesoría.',
     beneficios: [
@@ -35,7 +35,7 @@ const planesPorDefecto = [
   },
   {
     nombre: 'BLACK',
-    precio: '$99.900',
+    precio: '$119.900',
     periodo: '/mes',
     descripcion: 'Experiencia premium con coach dedicado.',
     beneficios: [
