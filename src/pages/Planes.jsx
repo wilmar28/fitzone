@@ -6,10 +6,10 @@ import { isAuthenticated, getPlanes } from '../services/api'
 
 const planesPorDefecto = [
   {
-    nombre: 'Plan Básico',
-    precio: '$29k',
+    nombre: 'FIT',
+    precio: '$39.900',
     periodo: '/mes',
-    descripcion: 'Perfecto para comenzar tu journey fitness.',
+    descripcion: 'Acceso básico a instalaciones.',
     beneficios: [
       'Acceso a zona cardio y pesas',
       'Vestuarios y duchas',
@@ -19,12 +19,12 @@ const planesPorDefecto = [
     color: 'default'
   },
   {
-    nombre: 'Plan Premium',
-    precio: '$49k',
+    nombre: 'SMART',
+    precio: '$69.900',
     periodo: '/mes',
-    descripcion: 'El más elegido por nuestros socios.',
+    descripcion: 'Plan completo con asesoría.',
     beneficios: [
-      'Todo lo del plan Básico',
+      'Todo lo del plan FIT',
       'Clases ilimitadas',
       '1 sesión con coach / mes',
       'Descuentos en tienda',
@@ -34,18 +34,19 @@ const planesPorDefecto = [
     badge: 'Más popular'
   },
   {
-    nombre: 'Plan Elite',
-    precio: '$79k',
+    nombre: 'BLACK',
+    precio: '$99.900',
     periodo: '/mes',
-    descripcion: 'Experiencia completa sin límites.',
+    descripcion: 'Experiencia premium con coach dedicado.',
     beneficios: [
-      'Todo lo del plan Premium',
+      'Todo lo del plan SMART',
+      'Coach personalizado',
       'Nutrición personalizada',
-      'Coach dedicado',
       'Acceso 24/7',
       'Plan de entrenamiento exclusivo',
     ],
-    color: 'default'
+    color: 'default',
+    badge: 'Premium'
   },
 ]
 
@@ -116,8 +117,12 @@ function Planes() {
       <InfoModal
         isOpen={Boolean(selectedPlan)}
         title={selectedPlan ? `Suscripción ${selectedPlan.nombre}` : ''}
-        description="Para adquirir este plan contáctanos al +57 300 123 4567."
-        details={[
+        description={selectedPlan?.nombre === 'BLACK'
+          ? "Este plan incluye asignación de coach personalizado. Te contactaremos en 24h para presentarte tu coach."
+          : "Para adquirir este plan contáctanos al +57 300 123 4567."}
+        details={selectedPlan?.nombre === 'BLACK'
+          ? ['Duración de 30 días con renovación automática.', 'Coach personal dedicado a tu progreso.', 'Sesiones personalizadas de entrenamiento y nutrición.']
+          : [
           'Duración de 30 días con renovación automática.',
           'Beneficios VIP en clases grupales y eventos.',
           'Soporte por WhatsApp y asesor de entrenamiento.',

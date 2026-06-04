@@ -30,6 +30,9 @@ import {
   Filler
 } from 'chart.js'
 import { Bar, Line, Pie } from 'react-chartjs-2'
+import { BarChart, Bar as RechartsBar, XAxis, YAxis, Tooltip, PieChart, Pie as RechartsPie, Cell, ResponsiveContainer, Legend } from 'recharts'
+import Papa from 'papaparse'
+import './Admin.css'
 
 ChartJS.register(
   CategoryScale,
@@ -43,7 +46,6 @@ ChartJS.register(
   ChartLegend,
   Filler
 )
-import './Admin.css'
 
 // SVG Icons
 const IconDashboard = () => (
@@ -72,6 +74,14 @@ const IconReports = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
     <polyline points="13 2 13 9 20 9" />
+  </svg>
+)
+
+const IconChart = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="3" x2="3" y2="20"></line>
+    <line x1="21" y1="20" x2="3" y2="20"></line>
+    <polyline points="21 20 21 10 18 16 15 5 6 17 3 15"></polyline>
   </svg>
 )
 
@@ -941,12 +951,16 @@ function SalesSection({ ventas, loading }) {
 }
 
 // Reports Section
-function ReportsSection() {
+function ReportsSection({ onRefresh }) {
   const [downloading, setDownloading] = useState(null)
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [categoria, setCategoria] = useState('')
   const [marca, setMarca] = useState('')
+  const [csvPreview, setCsvPreview] = useState(null)
+  const [importingProgress, setImportingProgress] = useState(null)
+  const [importSuccess, setImportSuccess] = useState(false)
+  const fileInputRef = useRef(null)
 
   // Categorías y marcas hardcodeadas
   const categorias = ['Proteínas', 'Pre-entreno', 'Vitaminas', 'Accesorios']
@@ -1029,6 +1043,55 @@ Para reportes completos, configura el backend en /api/reports/pdf
       alert('Error: ' + err.message)
     } finally {
       setDownloading(null)
+    }
+  }
+
+  const handleCsvUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        if (results.data && results.data.length > 0) {
+          setCsvPreview(results.data)
+          setImportSuccess(false)
+        }
+      },
+      error: (err) => {
+        alert('Error al procesar CSV: ' + err.message)
+      }
+    })
+  }
+
+  const handleConfirmImport = async () => {
+    if (!csvPreview || csvPreview.length === 0) return
+
+    setImportingProgress({ current: 0, total: csvPreview.length })
+
+    try {
+      for (let i = 0; i < csvPreview.length; i++) {
+        const row = csvPreview[i]
+        await createBackendProduct({
+          nombre: row.nombre,
+          sku: row.sku,
+          precio: parseFloat(row.precio) || 0,
+          stock: parseInt(row.stock) || 0,
+          descripcion: row.descripcion || '',
+          id_categoria: row.id_categoria || '',
+          id_marca: row.id_marca || ''
+        })
+        setImportingProgress({ current: i + 1, total: csvPreview.length })
+      }
+      setImportSuccess(true)
+      setCsvPreview(null)
+      setImportingProgress(null)
+      if (onRefresh) await onRefresh()
+      setTimeout(() => setImportSuccess(false), 3000)
+    } catch (err) {
+      alert('Error durante importación: ' + err.message)
+      setImportingProgress(null)
     }
   }
 
@@ -1168,6 +1231,231 @@ Para reportes completos, configura el backend en /api/reports/pdf
           </div>
         </div>
       </div>
+
+      {/* CSV Import Section */}
+      <div style={{ marginTop: '2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '1.5rem' }}>
+        <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: '1.1rem' }}>Importar productos desde CSV</h2>
+
+        {importSuccess && (
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '0.5rem', padding: '0.875rem', marginBottom: '1rem', color: '#10b981' }}>
+            ✓ {csvPreview ? csvPreview.length : 0} productos importados exitosamente
+          </div>
+        )}
+
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '0.5rem', fontWeight: 500 }}>
+            Selecciona archivo CSV
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleCsvUpload}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '0.65rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(148,163,184,0.25)',
+              background: 'rgba(255,255,255,0.05)',
+              color: '#f8fafc',
+              fontSize: '0.85rem',
+              fontFamily: 'inherit',
+              cursor: 'pointer'
+            }}
+          />
+          <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+            Columnas esperadas: nombre, sku, precio, stock (opcional: descripcion, id_categoria, id_marca)
+          </p>
+        </div>
+
+        {csvPreview && csvPreview.length > 0 && (
+          <>
+            <div style={{ marginBottom: '1rem' }}>
+              <h4 style={{ color: '#cbd5e1', fontSize: '0.9rem', marginBottom: '0.75rem' }}>Preview de datos</h4>
+              <div style={{ overflowX: 'auto', marginBottom: '1rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <th style={{ padding: '0.5rem', textAlign: 'left', color: '#94a3b8' }}>Nombre</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'left', color: '#94a3b8' }}>SKU</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'left', color: '#94a3b8' }}>Precio</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'left', color: '#94a3b8' }}>Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvPreview.slice(0, 5).map((row, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>{row.nombre}</td>
+                        <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>{row.sku}</td>
+                        <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>${row.precio}</td>
+                        <td style={{ padding: '0.5rem', color: '#e2e8f0' }}>{row.stock}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {csvPreview.length > 5 && (
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                    ... y {csvPreview.length - 5} productos más
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {importingProgress && (
+              <div style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '0.375rem' }}>
+                <p style={{ color: '#cbd5e1', fontSize: '0.875rem', margin: 0 }}>
+                  Importando {importingProgress.current} de {importingProgress.total}...
+                </p>
+                <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '0.5rem', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: '#10b981', width: `${(importingProgress.current / importingProgress.total) * 100}%`, transition: 'width 0.2s' }} />
+                </div>
+              </div>
+            )}
+
+            <button
+              className="btn-primary"
+              onClick={handleConfirmImport}
+              disabled={importingProgress !== null}
+              style={{ marginRight: '0.5rem' }}
+            >
+              {importingProgress ? 'Importando...' : 'Confirmar importación'}
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => { setCsvPreview(null); fileInputRef.current.value = '' }}
+              disabled={importingProgress !== null}
+            >
+              Cancelar
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Charts Section
+function ChartsSection({ productos, ventas, loading }) {
+  if (loading) return <div className="loading-text">Cargando datos...</div>
+
+  // Sales by month
+  const getLast6Months = () => {
+    const months = []
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    const today = new Date()
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      months.push({
+        name: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
+        total: 0
+      })
+    }
+    return months
+  }
+
+  const salesByMonth = getLast6Months()
+  ventas.forEach(v => {
+    const saleDate = new Date(v.fecha || v.created_at)
+    const saleMonth = saleDate.getMonth()
+    const saleYear = saleDate.getFullYear()
+
+    const today = new Date()
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      if (d.getMonth() === saleMonth && d.getFullYear() === saleYear) {
+        salesByMonth[5 - i].total += parseFloat(v.monto || v.total || 0)
+      }
+    }
+  })
+
+  // Top products
+  const productCount = {}
+  ventas.forEach(v => {
+    let items = []
+    if (v.items) {
+      try {
+        items = typeof v.items === 'string' ? JSON.parse(v.items) : v.items
+      } catch (e) {
+        console.error("Error parsing items", e)
+      }
+    }
+    if (Array.isArray(items)) {
+      items.forEach(item => {
+        const pid = item.product_id || item.productId || item.id_producto || item.id
+        const qty = parseInt(item.quantity || item.qty || 1, 10)
+        if (pid) productCount[pid] = (productCount[pid] || 0) + qty
+      })
+    }
+  })
+
+  const productMap = {}
+  productos.forEach(p => {
+    const id = p.id_producto ?? p.id
+    productMap[id] = p.nombre
+  })
+
+  const pieData = Object.keys(productCount).map(pid => ({
+    name: productMap[pid] || `Producto ${pid}`,
+    value: productCount[pid]
+  }))
+  pieData.sort((a, b) => b.value - a.value)
+
+  const finalPieData = pieData.length > 0 ? pieData : [
+    { name: 'Whey Gold Standard', value: 12 },
+    { name: 'Pre-workout C4', value: 8 },
+    { name: 'Creatina Monohidrato', value: 15 },
+    { name: 'Multivitamínico Sport', value: 5 },
+    { name: 'BCAA 2:1:1', value: 7 }
+  ]
+
+  const COLORS = ['#ff4b63', '#ff8a00', '#06b6d4', '#10b981', '#6366f1', '#ec4899']
+
+  return (
+    <div className="admin-section">
+      <h1 className="section-title">Gráficas</h1>
+
+      <div className="charts-grid">
+        <div className="chart-card">
+          <h3>Ventas por Mes (Últimos 6 Meses)</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={salesByMonth}>
+              <XAxis dataKey="name" stroke="#94a3b8" style={{ fontSize: '0.85rem' }} />
+              <YAxis stroke="#94a3b8" style={{ fontSize: '0.85rem' }} />
+              <Tooltip
+                contentStyle={{ background: '#0d0d0d', border: '1px solid rgba(255, 75, 99, 0.2)', borderRadius: '0.375rem' }}
+                labelStyle={{ color: '#f8fafc' }}
+              />
+              <RechartsBar dataKey="total" fill="#ff4b63" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-card full-width">
+          <h3>Productos Más Vendidos</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <RechartsPie
+                data={finalPieData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, value }) => `${name} (${value})`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {finalPieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </RechartsPie>
+              <Tooltip contentStyle={{ background: '#0d0d0d', border: '1px solid rgba(255, 75, 99, 0.2)', borderRadius: '0.375rem' }} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1256,6 +1544,7 @@ export default function Admin() {
     { id: 'dashboard', label: 'Dashboard', icon: IconDashboard },
     { id: 'productos', label: 'Productos', icon: IconProducts },
     { id: 'ventas', label: 'Ventas', icon: IconSales },
+    { id: 'graficas', label: 'Gráficas', icon: IconChart },
     { id: 'reportes', label: 'Reportes', icon: IconReports },
   ]
 
@@ -1312,18 +1601,19 @@ export default function Admin() {
 
       <main className="admin-main">
         {activeTab === 'dashboard' && (
-          <DashboardSection 
-            stats={stats} 
-            loading={loading} 
-            productos={productos} 
-            ventas={ventas} 
-            avgRating={avgRating} 
-            lowStockProducts={lowStockProducts} 
+          <DashboardSection
+            stats={stats}
+            loading={loading}
+            productos={productos}
+            ventas={ventas}
+            avgRating={avgRating}
+            lowStockProducts={lowStockProducts}
           />
         )}
         {activeTab === 'productos' && <ProductsSection productos={productos} onRefresh={cargarDatos} loading={loading} />}
         {activeTab === 'ventas' && <SalesSection ventas={ventas} loading={loading} />}
-        {activeTab === 'reportes' && <ReportsSection />}
+        {activeTab === 'graficas' && <ChartsSection productos={productos} ventas={ventas} loading={loading} />}
+        {activeTab === 'reportes' && <ReportsSection onRefresh={cargarDatos} />}
       </main>
     </div>
   )

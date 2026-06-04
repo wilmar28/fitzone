@@ -509,3 +509,15 @@ export const getRatingsStats = async () => {
 
   return { total, promedio, data, breakdown }
 }
+
+// ════════════════════════════════════════════════════════
+// COACH
+// ════════════════════════════════════════════════════════
+
+export const getCoachMiembros = () => apiCall('/api/coach/miembros')
+
+export const asignarCoach = (id_usuario, id_coach) => apiCall('/api/coach/asignar', { method: 'POST', body: JSON.stringify({ id_usuario, id_coach }) })
+
+export const getRutinaPersonalizada = (id_usuario) => apiCall(`/api/coach/rutina/${id_usuario}`)
+
+export const crearRutinaPersonalizada = (id_usuario, data) => apiCall(`/api/coach/rutina/${id_usuario}`, { method: 'POST', body: JSON.stringify(data) })
