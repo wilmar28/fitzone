@@ -17,6 +17,7 @@ import PagoExitoso from "./pages/PagoExitoso";
 import ResetPassword from "./pages/ResetPassword";
 import RutinaActiva from "./pages/RutinaActiva";
 import Coach from "./pages/Coach";
+import DevRegister from "./pages/DevRegister";
 
 import { isAuthenticated, getCurrentUser, getMe } from './services/api'
 
@@ -122,6 +123,7 @@ function AppContent() {
         <Route path="/pago-exitoso" element={<PagoExitoso />} />
         <Route path="/rutina/:id" element={<RutinaActiva />} />
         <Route path="/coach" element={<CoachRoute><Coach /></CoachRoute>} />
+        <Route path="/dev-register" element={<DevRegister />} />
       </Routes>
     </>
   )

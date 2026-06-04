@@ -122,6 +122,7 @@ export const loginUser = async (
     })
 
   if (error) {
+    console.log('Supabase loginUser error:', error)
     throw new Error(error.message)
   }
 
@@ -133,13 +134,22 @@ export const loginUser = async (
       (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/me',
       { headers: { Authorization: `Bearer ${data.session.access_token}` } }
     )
+    console.log('Laravel /api/me status:', backendRes.status)
     if (backendRes.ok) {
       const backendData = await backendRes.json()
+      console.log('Laravel /api/me response:', backendData)
       if (backendData?.user?.role) {
+        console.log('Rol detectado:', backendData.user.role)
         localStorage.setItem('fitzone_role', backendData.user.role)
+      } else {
+        console.log('Laravel no devolvió role en backendData.user.role — estructura recibida:', JSON.stringify(backendData))
       }
+    } else {
+      console.log('Laravel /api/me falló con status:', backendRes.status)
     }
-  } catch(e) {}
+  } catch(e) {
+    console.log('Error al consultar Laravel /api/me:', e.message)
+  }
 
   return data
 }

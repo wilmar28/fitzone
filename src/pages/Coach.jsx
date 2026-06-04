@@ -423,7 +423,10 @@ export default function Coach() {
     const cargar = async () => {
       try {
         const data = await getCoachMiembros()
-        setMiembros(Array.isArray(data) ? data : MOCK_MIEMBROS)
+        const lista = Array.isArray(data)
+          ? data
+          : data?.miembros || data?.data || data?.usuarios || []
+        setMiembros(lista.length > 0 ? lista : MOCK_MIEMBROS)
       } catch {
         setMiembros(MOCK_MIEMBROS)
       } finally {
