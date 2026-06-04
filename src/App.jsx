@@ -16,6 +16,7 @@ import Checkout from "./pages/Checkout";
 import PagoExitoso from "./pages/PagoExitoso";
 import ResetPassword from "./pages/ResetPassword";
 import RutinaActiva from "./pages/RutinaActiva";
+import Coach from "./pages/Coach";
 
 import { isAuthenticated, getCurrentUser, getMe } from './services/api'
 
@@ -36,6 +37,18 @@ function AdminRoute({ children }) {
   return children
 }
 
+// 🏋️ Ruta coach
+function CoachRoute({ children }) {
+  const session = getCurrentUser()
+  const role = session?.role || session?.user_metadata?.role
+
+  if (!session || (role !== 'coach' && role !== 'Coach')) {
+    return <Navigate to="/" />
+  }
+
+  return children
+}
+
 function AppContent() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -43,7 +56,8 @@ function AppContent() {
   const isAuthPage = location.pathname.startsWith('/login') || location.pathname.startsWith('/registro')
   const isResetPage = location.pathname.startsWith('/reset-password')
   const isRutinaPage = location.pathname.startsWith('/rutina/')
-  const showNavbar = !isAdminPage && !isAuthPage && !isResetPage && !isRutinaPage
+  const isCoachPage = location.pathname.startsWith('/coach')
+  const showNavbar = !isAdminPage && !isAuthPage && !isResetPage && !isRutinaPage && !isCoachPage
 
   useEffect(() => {
     const checkToken = async () => {
