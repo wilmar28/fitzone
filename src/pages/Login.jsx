@@ -23,9 +23,46 @@ function Login() {
 
     try {
       await loginUser(email, password)
+      const intended = localStorage.getItem('intended_purchase')
       const ADMIN_EMAILS = ['wrondonbarrero@gmail.com']
       if (ADMIN_EMAILS.includes(email)) {
         navigate('/admin')
+      } else if (intended) {
+        const parsed = JSON.parse(intended)
+        localStorage.removeItem('intended_purchase')
+        if (parsed.type === 'plan') {
+          const parsedPrice = (priceStr) => {
+            if (typeof priceStr === "number") return priceStr;
+            let clean = priceStr.replace(/[^0-9kK]/g, "");
+            if (clean.toLowerCase().includes("k")) {
+              return parseInt(clean) * 1000;
+            }
+            return parseInt(clean) || 0;
+          };
+          navigate('/checkout', {
+            state: {
+              items: [
+                {
+                  id: `plan_${parsed.plan.nombre.toLowerCase().replace(/\s+/g, "_")}`,
+                  nombre: parsed.plan.nombre,
+                  qty: 1,
+                  precio: parsedPrice(parsed.plan.precio),
+                  isPlan: true
+                }
+              ],
+              totalPrice: parsedPrice(parsed.plan.precio)
+            }
+          })
+        } else if (parsed.type === 'cart') {
+          navigate('/checkout', {
+            state: {
+              items: parsed.items,
+              totalPrice: parsed.totalPrice
+            }
+          })
+        } else {
+          navigate('/')
+        }
       } else {
         navigate('/')
       }
