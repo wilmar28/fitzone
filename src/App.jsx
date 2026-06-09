@@ -29,10 +29,10 @@ function ProtectedRoute({ children }) {
 // 👑 Ruta admin
 function AdminRoute({ children }) {
   const session = getCurrentUser()
-  const ADMIN_EMAILS = ['wrondonbarrero@gmail.com']
+  const role = localStorage.getItem('fitzone_role') || session?.role || session?.user_metadata?.role
 
-  if (!session || !ADMIN_EMAILS.includes(session.email)) {
-    return <Navigate to="/" />
+  if (!session || (role !== 'admin' && role !== 'Admin')) {
+    return <Navigate to="/login" />
   }
 
   return children
@@ -44,7 +44,7 @@ function CoachRoute({ children }) {
   const role = localStorage.getItem('fitzone_role') || session?.role || session?.user_metadata?.role
 
   if (!session || (role !== 'coach' && role !== 'Coach')) {
-    return <Navigate to="/" />
+    return <Navigate to="/login" />
   }
 
   return children
@@ -102,6 +102,14 @@ function AppContent() {
         <Route
           path="/"
           element={<Dashboard />}
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
         />
 
         {/* NUEVAS RUTAS */}

@@ -15,6 +15,13 @@ import {
   getTiendaCategorias,
   getTiendaMarcas,
   getRatingsStats,
+  getAdminUsers,
+  updateAdminUser,
+  deleteAdminUser,
+  restoreAdminUser,
+  getAdminMemberships,
+  getAdminDashboardStats,
+  restoreBackendProduct,
 } from '../services/api'
 import {
   Chart as ChartJS,
@@ -159,7 +166,13 @@ const IconStar = ({ fill = "none", stroke = "currentColor" }) => (
 // Dashboard Section
 function DashboardSection({ stats, loading, productos, ventas, avgRating, lowStockProducts }) {
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false)
-  const [dashboardStats, setDashboardStats] = useState({ totalVentas: 0, totalProductos: 0, totalUsuarios: 0, totalOrdenes: 0 })
+  const [dashboardStats, setDashboardStats] = useState({
+    usuarios: { total: 0, activos: 0, admins: 0, coaches: 0 },
+    membresias: { fit: 0, smart: 0, black: 0 },
+    productos: { total: 0, activos: 0, eliminados: 0 },
+    rutinas: { total: 0, enviadas: 0 },
+    ingresos: { aprobados: 0, pendientes: 0, total: 0 }
+  })
   const [salesData, setSalesData] = useState([])
   const [sectionLoading, setSectionLoading] = useState(false)
   const [avgRatingLocal, setAvgRatingLocal] = useState('0.0')
@@ -173,14 +186,31 @@ function DashboardSection({ stats, loading, productos, ventas, avgRating, lowSto
   const loadDashboardData = async () => {
     setSectionLoading(true)
     try {
-      const [statsRes, salesRes, ratingsRes, productosRes] = await Promise.all([
-        getDashboardStats().catch(() => ({ totalVentas: 0, totalProductos: 0, totalUsuarios: 0, totalOrdenes: 0 })),
+      const [adminStatsRes, salesRes, ratingsRes, productosRes] = await Promise.all([
+        getAdminDashboardStats().catch(() => null),
         getBackendSales().catch(() => []),
         supabase.from('ratings').select('rating'),
         getBackendProducts().catch(() => [])
       ])
 
-      setDashboardStats(statsRes || { totalVentas: 0, totalProductos: 0, totalUsuarios: 0, totalOrdenes: 0 })
+      let parsedStats = null
+      if (adminStatsRes && adminStatsRes.success) {
+        parsedStats = adminStatsRes.data
+      }
+
+      if (!parsedStats) {
+        const totalSalesVal = Array.isArray(salesRes) ? salesRes.reduce((acc, curr) => acc + parseFloat(curr.monto || curr.total || 0), 0) : 0
+        const totalProdsVal = Array.isArray(productosRes) ? productosRes.length : 0
+        parsedStats = {
+          usuarios: { total: 0, activos: 0, admins: 0, coaches: 0 },
+          membresias: { fit: 0, smart: 0, black: 0 },
+          productos: { total: totalProdsVal, activos: totalProdsVal, eliminados: 0 },
+          rutinas: { total: 0, enviadas: 0 },
+          ingresos: { aprobados: totalSalesVal, pendientes: 0, total: totalSalesVal }
+        }
+      }
+
+      setDashboardStats(parsedStats)
 
       const salesArray = Array.isArray(salesRes)
         ? salesRes
@@ -509,11 +539,35 @@ function DashboardSection({ stats, loading, productos, ventas, avgRating, lowSto
       </div>
 
       <div className="stats-grid">
-        <StatCard icon={<IconDollar />} label="Total Ventas" value={`$${(dashboardStats.totalVentas || 0).toLocaleString('es-CO')}`} />
-        <StatCard icon={<IconBox />} label="Productos" value={dashboardStats.totalProductos || 6} />
-        <StatCard icon={<IconUsers />} label="Usuarios" value={dashboardStats.totalUsuarios || 0} />
-        <StatCard icon={<IconOrders />} label="Órdenes" value={dashboardStats.totalOrdenes || 0} />
-        <StatCard icon={<IconStar fill="#ffb800" stroke="#ffb800" />} label="Calificación Promedio" value={`${avgRatingLocal} ★`} />
+        <StatCard 
+          icon={<IconDollar />} 
+          label="Ingresos Aprobados" 
+          value={`$${(dashboardStats?.ingresos?.aprobados ?? 0).toLocaleString('es-CO')}`} 
+          subValue={`Pendiente: $${(dashboardStats?.ingresos?.pendientes ?? 0).toLocaleString('es-CO')}`}
+        />
+        <StatCard 
+          icon={<IconBox />} 
+          label="Productos" 
+          value={dashboardStats?.productos?.total ?? 0} 
+          subValue={`Activos: ${dashboardStats?.productos?.activos ?? 0} | Elims: ${dashboardStats?.productos?.eliminados ?? 0}`}
+        />
+        <StatCard 
+          icon={<IconUsers />} 
+          label="Usuarios" 
+          value={dashboardStats?.usuarios?.total ?? 0} 
+          subValue={`Activos: ${dashboardStats?.usuarios?.activos ?? 0} | Coaches: ${dashboardStats?.usuarios?.coaches ?? 0}`}
+        />
+        <StatCard 
+          icon={<IconOrders />} 
+          label="Membresías" 
+          value={(dashboardStats?.membresias?.fit ?? 0) + (dashboardStats?.membresias?.smart ?? 0) + (dashboardStats?.membresias?.black ?? 0)} 
+          subValue={`FIT: ${dashboardStats?.membresias?.fit ?? 0} | SMART: ${dashboardStats?.membresias?.smart ?? 0} | BLACK: ${dashboardStats?.membresias?.black ?? 0}`}
+        />
+        <StatCard 
+          icon={<IconStar fill="#ffb800" stroke="#ffb800" />} 
+          label="Calificación Promedio" 
+          value={`${avgRatingLocal} ★`} 
+        />
       </div>
 
       {/* Gráficas */}
@@ -546,20 +600,30 @@ function DashboardSection({ stats, loading, productos, ventas, avgRating, lowSto
   )
 }
 
-function StatCard({ icon, label, value }) {
+function StatCard({ icon, label, value, subValue }) {
   return (
     <div className="stat-card">
       <div className="stat-icon">{icon}</div>
       <div className="stat-content">
         <p className="stat-label">{label}</p>
         <p className="stat-value">{value}</p>
+        {subValue && (
+          <p className="stat-subvalue" style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '0.35rem', borderTop: '1px solid rgba(255, 75, 99, 0.1)', paddingTop: '0.35rem' }}>
+            {subValue}
+          </p>
+        )}
       </div>
     </div>
   )
 }
 
 // Products Section
-function ProductsSection({ productos, onRefresh, loading }) {
+function ProductsSection({ onRefresh }) {
+  const [productos, setProductos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [deleted, setDeleted] = useState('')
+  
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formSubmitting, setFormSubmitting] = useState(false)
@@ -581,18 +645,31 @@ function ProductsSection({ productos, onRefresh, loading }) {
   })
 
   useEffect(() => {
+    fetchProducts()
+  }, [search, deleted])
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    try {
+      const res = await getBackendProducts({ search, deleted })
+      const list = res.data || res.products || res.productos || res || []
+      setProductos(list)
+    } catch (err) {
+      console.error('Error fetching products:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     getTiendaCategorias().then(cats => {
-      console.log('ProductsSection - getTiendaCategorias() devolvió:', cats)
       setCategorias(cats)
     }).catch(() => {
-      console.log('ProductsSection - Error cargando categorías')
       setCategorias([])
     })
     getTiendaMarcas().then(marks => {
-      console.log('ProductsSection - getTiendaMarcas() devolvió:', marks)
       setMarcas(marks)
     }).catch(() => {
-      console.log('ProductsSection - Error cargando marcas')
       setMarcas([])
     })
   }, [])
@@ -612,10 +689,9 @@ function ProductsSection({ productos, onRefresh, loading }) {
       precio: producto.precio || '',
       stock: producto.stock || '',
       estado: producto.estado || 'activo',
-      imagen_url: producto.imagen_url || '',
+      imagen_url: producto.imagen || producto.imagen_url || '',
       descripcion: producto.descripcion || '',
     })
-    // Soporta id_producto (backend Laravel) o id (genérico)
     setEditingId(producto.id_producto ?? producto.id)
     setShowForm(true)
   }
@@ -630,14 +706,14 @@ function ProductsSection({ productos, onRefresh, loading }) {
     setUploading(true)
     try {
       const { data, error } = await supabase.storage
-        .from('productos')
-        .upload(fileName, file, { upsert: true })
+          .from('productos')
+          .upload(fileName, file, { upsert: true })
 
       if (error) throw new Error(error.message)
 
       const { data: urlData } = supabase.storage
-        .from('productos')
-        .getPublicUrl(data.path)
+          .from('productos')
+          .getPublicUrl(data.path)
 
       setFormData(prev => ({ ...prev, imagen_url: urlData.publicUrl }))
       setUploadedFileName(file.name)
@@ -659,7 +735,8 @@ function ProductsSection({ productos, onRefresh, loading }) {
       }
       resetForm()
       setShowForm(false)
-      await onRefresh()
+      await fetchProducts()
+      if (onRefresh) await onRefresh()
     } catch (err) {
       alert('Error: ' + err.message)
     } finally {
@@ -668,17 +745,29 @@ function ProductsSection({ productos, onRefresh, loading }) {
   }
 
   const handleDelete = async (id) => {
-    if (confirm('¿Eliminar este producto?')) {
+    if (confirm('¿Estás seguro de que deseas inhabilitar (Soft Delete) este producto?')) {
       try {
         await deleteBackendProduct(id)
-        onRefresh()
+        await fetchProducts()
+        if (onRefresh) await onRefresh()
       } catch (err) {
         alert('Error: ' + err.message)
       }
     }
   }
 
-  if (loading) return <div className="loading-text">Cargando productos...</div>
+  const handleRestore = async (id) => {
+    if (confirm('¿Deseas restaurar este producto inhabilitado?')) {
+      try {
+        await restoreBackendProduct(id)
+        await fetchProducts()
+        if (onRefresh) await onRefresh()
+        alert('Producto restaurado con éxito.')
+      } catch (err) {
+        alert('Error: ' + err.message)
+      }
+    }
+  }
 
   return (
     <div className="admin-section">
@@ -687,6 +776,61 @@ function ProductsSection({ productos, onRefresh, loading }) {
         <button className="btn-primary" onClick={() => { resetForm(); setShowForm(true) }}>
           <IconPlus /> Nuevo Producto
         </button>
+      </div>
+
+      {/* Buscador y Filtros */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255, 75, 99, 0.1)',
+        borderRadius: '0.75rem',
+        padding: '1.25rem',
+        marginBottom: '1.5rem',
+        display: 'grid',
+        gridTemplateColumns: '2fr 1fr',
+        gap: '1rem',
+        alignItems: 'end'
+      }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Buscar Producto o SKU</label>
+          <input
+            type="text"
+            placeholder="Ej: Whey Protein"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Borrado Lógico</label>
+          <select
+            value={deleted}
+            onChange={(e) => setDeleted(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          >
+            <option value="">Excluir eliminados</option>
+            <option value="with">Incluir eliminados</option>
+            <option value="only">Solo eliminados</option>
+          </select>
+        </div>
       </div>
 
       {showForm && (
@@ -865,49 +1009,73 @@ function ProductsSection({ productos, onRefresh, loading }) {
         </div>
       )}
 
-      <div className="table-wrapper">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>SKU</th>
-              <th>Categoría</th>
-              <th>Marca</th>
-              <th>Precio</th>
-              <th>Stock</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productos.map((p) => (
-              <tr key={p.id_producto ?? p.id}>
-                <td>{p.nombre}</td>
-                <td>{p.sku}</td>
-                <td>{p.categoria || '-'}</td>
-                <td>{p.marca || '-'}</td>
-                <td>${(p.precio || 0).toLocaleString('es-CO')}</td>
-                <td>
-                  <span className={`stock-badge ${p.stock > 5 ? 'available' : 'low'}`}>
-                    {p.stock}
-                  </span>
-                </td>
-                <td>
-                  <span className="status-badge">{p.estado || 'activo'}</span>
-                </td>
-                <td className="td-actions">
-                  <button className="action-btn edit" onClick={() => handleEdit(p)} title="Editar">
-                    <IconEdit />
-                  </button>
-                  <button className="action-btn delete" onClick={() => handleDelete(p.id_producto ?? p.id)} title="Eliminar">
-                    <IconTrash />
-                  </button>
-                </td>
+      {loading ? (
+        <div className="loading-text">Cargando productos...</div>
+      ) : (
+        <div className="table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>SKU</th>
+                <th>Categoría</th>
+                <th>Marca</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {productos.map((p) => {
+                const isDeleted = Boolean(p.deleted_at);
+                return (
+                  <tr key={p.id_producto ?? p.id} style={{ opacity: isDeleted ? 0.6 : 1 }}>
+                    <td>{p.nombre}</td>
+                    <td>{p.sku}</td>
+                    <td>{p.categoria || '-'}</td>
+                    <td>{p.marca || '-'}</td>
+                    <td>${(p.precio || 0).toLocaleString('es-CO')}</td>
+                    <td>
+                      <span className={`stock-badge ${p.stock > 5 ? 'available' : 'low'}`}>
+                        {p.stock}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="status-badge" style={{
+                        background: isDeleted ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                        color: isDeleted ? '#f87171' : '#86efac',
+                        border: isDeleted ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)'
+                      }}>
+                        {isDeleted ? 'inactivo' : (p.estado || 'activo')}
+                      </span>
+                    </td>
+                    <td className="td-actions">
+                      {isDeleted ? (
+                        <button className="action-btn" onClick={() => handleRestore(p.id_producto ?? p.id)} title="Restaurar" style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                            <path d="M3 3v5h5" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <>
+                          <button className="action-btn edit" onClick={() => handleEdit(p)} title="Editar">
+                            <IconEdit />
+                          </button>
+                          <button className="action-btn delete" onClick={() => handleDelete(p.id_producto ?? p.id)} title="Eliminar">
+                            <IconTrash />
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
@@ -945,6 +1113,683 @@ function SalesSection({ ventas, loading }) {
           </tbody>
         </table>
       </div>
+    </div>
+  )
+}
+
+// Usuarios Section
+function UsuariosSection() {
+  const [users, setUsers] = useState([])
+  const [search, setSearch] = useState('')
+  const [rol, setRol] = useState('')
+  const [activo, setActivo] = useState('')
+  const [plan, setPlan] = useState('')
+  const [deleted, setDeleted] = useState('')
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  // Edit Modal State
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
+  const [editForm, setEditForm] = useState({
+    nombre: '',
+    email: '',
+    rol: 'user',
+    activo: true,
+    plan: '',
+    id_coach: ''
+  })
+  const [coaches, setCoaches] = useState([])
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    fetchUsers()
+  }, [search, rol, activo, plan, deleted, page])
+
+  useEffect(() => {
+    fetchCoaches()
+  }, [])
+
+  const fetchUsers = async () => {
+    setLoading(true)
+    try {
+      const res = await getAdminUsers({
+        search,
+        rol,
+        activo,
+        plan,
+        deleted,
+        page,
+        per_page: 10
+      })
+      if (res && res.success) {
+        setUsers(res.data || [])
+        setMeta(res.meta || null)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchCoaches = async () => {
+    try {
+      const res = await getAdminUsers({ rol: 'coach', per_page: 100 })
+      if (res && res.success) {
+        setCoaches(res.data || [])
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleEditClick = (user) => {
+    setEditingUser(user)
+    setEditForm({
+      nombre: user.nombre || '',
+      email: user.email || '',
+      rol: user.rol || 'user',
+      activo: user.activo ?? true,
+      plan: user.plan || '',
+      id_coach: user.id_coach || ''
+    })
+    setShowEditModal(true)
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      const res = await updateAdminUser(editingUser.id_usuario, {
+        nombre: editForm.nombre,
+        email: editForm.email,
+        rol: editForm.rol,
+        activo: editForm.activo,
+        plan: editForm.plan || null,
+        id_coach: editForm.id_coach ? parseInt(editForm.id_coach) : null
+      })
+      if (res.success) {
+        setShowEditModal(false)
+        fetchUsers()
+        alert('Usuario actualizado con éxito.')
+      }
+    } catch (err) {
+      alert(err.message || 'Error al actualizar usuario.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (confirm('¿Estás seguro de que deseas inhabilitar (Soft Delete) este usuario?')) {
+      try {
+        const res = await deleteAdminUser(id)
+        if (res.success) {
+          fetchUsers()
+          alert('Usuario inhabilitado con éxito.')
+        }
+      } catch (err) {
+        alert(err.message || 'Error al inhabilitar usuario.')
+      }
+    }
+  }
+
+  const handleRestore = async (id) => {
+    if (confirm('¿Deseas restaurar este usuario inhabilitado?')) {
+      try {
+        const res = await restoreAdminUser(id)
+        if (res.success) {
+          fetchUsers()
+          alert('Usuario restaurado con éxito.')
+        }
+      } catch (err) {
+        alert(err.message || 'Error al restaurar usuario.')
+      }
+    }
+  }
+
+  return (
+    <div className="admin-section">
+      <div className="section-header" style={{ marginBottom: '1rem' }}>
+        <h1 className="section-title">Gestión de Usuarios</h1>
+      </div>
+
+      {/* Filtros de Búsqueda */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255, 75, 99, 0.1)',
+        borderRadius: '0.75rem',
+        padding: '1.25rem',
+        marginBottom: '1.5rem',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+        gap: '1rem',
+        alignItems: 'end'
+      }}>
+        <div style={{ gridColumn: 'span 2' }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Buscar por Nombre o Email</label>
+          <input
+            type="text"
+            placeholder="Ej: Juan Pérez"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Rol</label>
+          <select
+            value={rol}
+            onChange={(e) => { setRol(e.target.value); setPage(1); }}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          >
+            <option value="">Todos</option>
+            <option value="admin">Administrador</option>
+            <option value="coach">Coach</option>
+            <option value="user">Usuario</option>
+          </select>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Estado</label>
+          <select
+            value={activo}
+            onChange={(e) => { setActivo(e.target.value); setPage(1); }}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          >
+            <option value="">Todos</option>
+            <option value="1">Activos</option>
+            <option value="0">Inactivos</option>
+          </select>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Plan</label>
+          <select
+            value={plan}
+            onChange={(e) => { setPlan(e.target.value); setPage(1); }}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          >
+            <option value="">Todos</option>
+            <option value="FIT">FIT</option>
+            <option value="SMART">SMART</option>
+            <option value="BLACK">BLACK</option>
+          </select>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Borrado Lógico</label>
+          <select
+            value={deleted}
+            onChange={(e) => { setDeleted(e.target.value); setPage(1); }}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          >
+            <option value="">Excluir eliminados</option>
+            <option value="with">Incluir eliminados</option>
+            <option value="only">Solo eliminados</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Plan</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>Cargando usuarios...</td>
+              </tr>
+            ) : users.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>No se encontraron usuarios.</td>
+              </tr>
+            ) : (
+              users.map((u) => (
+                <tr key={u.id_usuario} style={{ opacity: u.deleted_at ? 0.6 : 1 }}>
+                  <td>#{u.id_usuario}</td>
+                  <td style={{ fontWeight: 600 }}>{u.nombre}</td>
+                  <td>{u.email}</td>
+                  <td>
+                    <span className="status-badge" style={{
+                      background: u.rol === 'admin' ? 'rgba(99, 102, 241, 0.15)' : u.rol === 'coach' ? 'rgba(236, 72, 153, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+                      color: u.rol === 'admin' ? '#818cf8' : u.rol === 'coach' ? '#f472b6' : '#cbd5e1',
+                      border: u.rol === 'admin' ? '1px solid rgba(99, 102, 241, 0.3)' : u.rol === 'coach' ? '1px solid rgba(236, 72, 153, 0.3)' : '1px solid rgba(148, 163, 184, 0.3)'
+                    }}>
+                      {u.rol}
+                    </span>
+                  </td>
+                  <td>
+                    {u.plan ? (
+                      <span className="status-badge" style={{
+                        background: u.plan === 'BLACK' ? 'rgba(255, 75, 99, 0.15)' : 'rgba(255, 138, 0, 0.15)',
+                        color: u.plan === 'BLACK' ? '#ff4b63' : '#ff8a00',
+                        border: u.plan === 'BLACK' ? '1px solid rgba(255, 75, 99, 0.3)' : '1px solid rgba(255, 138, 0, 0.3)'
+                      }}>
+                        {u.plan}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#64748b' }}>Ninguno</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className="status-badge" style={{
+                      background: u.activo ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: u.activo ? '#86efac' : '#f87171',
+                      border: u.activo ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
+                    }}>
+                      {u.activo ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="td-actions">
+                    <button className="action-btn edit" onClick={() => handleEditClick(u)} title="Editar">
+                      <IconEdit />
+                    </button>
+                    {u.deleted_at ? (
+                      <button className="action-btn" onClick={() => handleRestore(u.id_usuario)} title="Restaurar" style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button className="action-btn delete" onClick={() => handleDelete(u.id_usuario)} title="Inhabilitar">
+                        <IconTrash />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Paginación */}
+      {meta && meta.last_page > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem' }}>
+          <button
+            className="btn-secondary"
+            disabled={page === 1}
+            onClick={() => setPage(p => Math.max(p - 1, 1))}
+            style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+          >
+            Anterior
+          </button>
+          <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Página {meta.current_page} de {meta.last_page}</span>
+          <button
+            className="btn-secondary"
+            disabled={page === meta.last_page}
+            onClick={() => setPage(p => Math.min(p + 1, meta.last_page))}
+            style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
+
+      {/* Modal Editar Usuario */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <h2 style={{ marginBottom: '1.25rem' }}>Editar Usuario</h2>
+            <form onSubmit={handleEditSubmit} className="product-form">
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.3rem' }}>Nombre</label>
+                <input
+                  type="text"
+                  value={editForm.nombre}
+                  onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
+                  required
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.3rem' }}>Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  required
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className="form-row">
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.3rem' }}>Rol</label>
+                  <select
+                    value={editForm.rol}
+                    onChange={(e) => setEditForm({ ...editForm, rol: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.8rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid rgba(148,163,184,0.25)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#f8fafc',
+                      fontSize: '0.85rem',
+                      fontFamily: 'inherit'
+                    }}
+                  >
+                    <option value="user" style={{ background: '#1e293b' }}>Usuario</option>
+                    <option value="coach" style={{ background: '#1e293b' }}>Coach</option>
+                    <option value="admin" style={{ background: '#1e293b' }}>Administrador</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.3rem' }}>Plan</label>
+                  <select
+                    value={editForm.plan}
+                    onChange={(e) => setEditForm({ ...editForm, plan: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.8rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid rgba(148,163,184,0.25)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#f8fafc',
+                      fontSize: '0.85rem',
+                      fontFamily: 'inherit'
+                    }}
+                  >
+                    <option value="" style={{ background: '#1e293b' }}>Ninguno</option>
+                    <option value="FIT" style={{ background: '#1e293b' }}>FIT</option>
+                    <option value="SMART" style={{ background: '#1e293b' }}>SMART</option>
+                    <option value="BLACK" style={{ background: '#1e293b' }}>BLACK</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.3rem' }}>Coach Asignado</label>
+                <select
+                  value={editForm.id_coach}
+                  onChange={(e) => setEditForm({ ...editForm, id_coach: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.8rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid rgba(148,163,184,0.25)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#f8fafc',
+                    fontSize: '0.85rem',
+                    fontFamily: 'inherit'
+                  }}
+                >
+                  <option value="" style={{ background: '#1e293b' }}>Sin Coach</option>
+                  {coaches.map((c) => (
+                    <option key={c.id_usuario} value={c.id_usuario} style={{ background: '#1e293b' }}>
+                      {c.nombre} ({c.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
+                <input
+                  type="checkbox"
+                  id="user-activo"
+                  checked={editForm.activo}
+                  onChange={(e) => setEditForm({ ...editForm, activo: e.target.checked })}
+                  style={{ cursor: 'pointer', width: 'auto' }}
+                />
+                <label htmlFor="user-activo" style={{ fontSize: '0.88rem', color: '#cbd5e1', cursor: 'pointer', fontWeight: 500 }}>
+                  Usuario Activo
+                </label>
+              </div>
+
+              <div className="form-actions" style={{ marginTop: '1.25rem' }}>
+                <button type="submit" className="btn-primary" disabled={submitting}>
+                  {submitting ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+                <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Membresias Section
+function MembresiasSection() {
+  const [purchases, setPurchases] = useState([])
+  const [search, setSearch] = useState('')
+  const [plan, setPlan] = useState('')
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchMemberships()
+  }, [search, plan, page])
+
+  const fetchMemberships = async () => {
+    setLoading(true)
+    try {
+      const res = await getAdminMemberships({
+        search,
+        plan,
+        page,
+        per_page: 10
+      })
+      if (res && res.success) {
+        setPurchases(res.data || [])
+        setMeta(res.meta || null)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="admin-section">
+      <div className="section-header" style={{ marginBottom: '1rem' }}>
+        <h1 className="section-title">Historial de Membresías</h1>
+      </div>
+
+      {/* Filtros */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255, 75, 99, 0.1)',
+        borderRadius: '0.75rem',
+        padding: '1.25rem',
+        marginBottom: '1.5rem',
+        display: 'grid',
+        gridTemplateColumns: '2fr 1fr',
+        gap: '1rem',
+        alignItems: 'end'
+      }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Buscar por Cliente o Email</label>
+          <input
+            type="text"
+            placeholder="Ej: Juan Pérez"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>Plan</label>
+          <select
+            value={plan}
+            onChange={(e) => { setPlan(e.target.value); setPage(1); }}
+            style={{
+              width: '100%',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.2)',
+              color: '#f8fafc',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem'
+            }}
+          >
+            <option value="">Todos</option>
+            <option value="FIT">FIT</option>
+            <option value="SMART">SMART</option>
+            <option value="BLACK">BLACK</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID Compra</th>
+              <th>Nombre Cliente</th>
+              <th>Email</th>
+              <th>Plan Adquirido</th>
+              <th>Fecha de Compra</th>
+              <th>Referencia Pago</th>
+              <th>Estado Pago</th>
+              <th>Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Cargando membresías...</td>
+              </tr>
+            ) : purchases.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>No se encontraron compras de membresía.</td>
+              </tr>
+            ) : (
+              purchases.map((p) => (
+                <tr key={p.id}>
+                  <td>#{p.id}</td>
+                  <td style={{ fontWeight: 600 }}>{p.nombre}</td>
+                  <td>{p.email}</td>
+                  <td>
+                    <span className="status-badge" style={{
+                      background: p.plan === 'BLACK' ? 'rgba(255, 75, 99, 0.15)' : 'rgba(255, 138, 0, 0.15)',
+                      color: p.plan === 'BLACK' ? '#ff4b63' : '#ff8a00',
+                      border: p.plan === 'BLACK' ? '1px solid rgba(255, 75, 99, 0.3)' : '1px solid rgba(255, 138, 0, 0.3)'
+                    }}>
+                      {p.plan}
+                    </span>
+                  </td>
+                  <td>{new Date(p.fecha_compra).toLocaleString('es-CO')}</td>
+                  <td><code style={{ color: '#cbd5e1', fontSize: '0.8rem' }}>{p.referencia_pago}</code></td>
+                  <td>
+                    <span className="status-badge" style={{
+                      background: p.estado_pago === 'APPROVED' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: p.estado_pago === 'APPROVED' ? '#86efac' : '#f87171',
+                      border: p.estado_pago === 'APPROVED' ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
+                    }}>
+                      {p.estado_pago}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: 600, color: '#f8fafc' }}>
+                    ${(p.precio || 0).toLocaleString('es-CO')}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Paginación */}
+      {meta && meta.last_page > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem' }}>
+          <button
+            className="btn-secondary"
+            disabled={page === 1}
+            onClick={() => setPage(p => Math.max(p - 1, 1))}
+            style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+          >
+            Anterior
+          </button>
+          <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Página {meta.current_page} de {meta.last_page}</span>
+          <button
+            className="btn-secondary"
+            disabled={page === meta.last_page}
+            onClick={() => setPage(p => Math.min(p + 1, meta.last_page))}
+            style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -1541,6 +2386,8 @@ export default function Admin() {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: IconDashboard },
+    { id: 'usuarios', label: 'Usuarios', icon: IconUsers },
+    { id: 'membresias', label: 'Membresías', icon: IconOrders },
     { id: 'productos', label: 'Productos', icon: IconProducts },
     { id: 'ventas', label: 'Ventas', icon: IconSales },
     { id: 'graficas', label: 'Gráficas', icon: IconChart },
@@ -1609,6 +2456,8 @@ export default function Admin() {
             lowStockProducts={lowStockProducts}
           />
         )}
+        {activeTab === 'usuarios' && <UsuariosSection />}
+        {activeTab === 'membresias' && <MembresiasSection />}
         {activeTab === 'productos' && <ProductsSection productos={productos} onRefresh={cargarDatos} loading={loading} />}
         {activeTab === 'ventas' && <SalesSection ventas={ventas} loading={loading} />}
         {activeTab === 'graficas' && <ChartsSection productos={productos} ventas={ventas} loading={loading} />}

@@ -82,6 +82,9 @@ export default function Tienda() {
     buscar: '',
     orden: 'nombre',
   })
+  const [pagina, setPagina] = useState(1)
+  const [totalPaginas, setTotalPaginas] = useState(1)
+  const [totalProductos, setTotalProductos] = useState(0)
   const [toasts, setToasts] = useState([])
   const { addItem } = useCart()
   const navigate = useNavigate()
@@ -121,10 +124,14 @@ export default function Tienda() {
           search: filtros.buscar,
           categoria_id: filtros.categoria,
           marca_id: filtros.marca,
-          orden: filtros.orden
+          orden: filtros.orden,
+          page: pagina,
+          per_page: 9,
         }
         const res = await getTiendaProductos(params)
-        setProductos(res.data || res)
+        setProductos(res.productos || [])
+        setTotalPaginas(res.last_page || 1)
+        setTotalProductos(res.total || 0)
       } catch {
         const mockProductos = [
           { id: 1, nombre: 'Whey Gold Standard', sku: 'WGS-001', precio: 180000, categoria: 'Proteínas', marca: 'Optimum Nutrition', descripcion: 'Proteína whey de alta calidad con 24g por porción.', stock: 15, estado_stock: 'disponible', margen: 35, imagen_url: null },
@@ -135,12 +142,14 @@ export default function Tienda() {
           { id: 6, nombre: 'Guantes de entreno', sku: 'GUA-006', precio: 45000, categoria: 'Accesorios', marca: 'Dymatize', descripcion: 'Guantes con grip reforzado para pesas.', stock: 12, estado_stock: 'disponible', margen: 50, imagen_url: null },
         ]
         setProductos(mockProductos)
+        setTotalPaginas(1)
+        setTotalProductos(mockProductos.length)
       } finally {
         setCargando(false)
       }
     }
     fetchProds()
-  }, [filtros])
+  }, [filtros, pagina])
 
   const showToast = (nombre) => {
     const id = Date.now()
@@ -164,8 +173,10 @@ export default function Tienda() {
     showToast(p.nombre)
   }
 
-  const setFiltro = (campo, valor) =>
+  const setFiltro = (campo, valor) => {
+    setPagina(1)
     setFiltros(prev => ({ ...prev, [campo]: valor }))
+  }
 
   const selectStyle = {
     padding: '0.55rem 0.8rem',
@@ -216,7 +227,7 @@ export default function Tienda() {
           Tienda FitZone
         </h1>
         <p className="fz-copy">
-          {cargando ? 'Cargando...' : `${productos.length} productos disponibles`}
+          {cargando ? 'Cargando...' : `${totalProductos} productos encontrados`}
         </p>
       </div>
 
@@ -258,7 +269,10 @@ export default function Tienda() {
         </select>
         {(filtros.buscar || filtros.categoria || filtros.marca) && (
           <button
-            onClick={() => setFiltros({ categoria: '', marca: '', buscar: '', orden: 'nombre' })}
+            onClick={() => {
+              setPagina(1)
+              setFiltros({ categoria: '', marca: '', buscar: '', orden: 'nombre' })
+            }}
             style={{
               ...selectStyle, background: 'rgba(255,75,99,0.12)',
               border: '1px solid rgba(255,75,99,0.3)', color: '#fca5a5'
@@ -376,6 +390,76 @@ export default function Tienda() {
 
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Paginación */}
+      {totalPaginas > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginTop: '2.5rem',
+          marginBottom: '1rem'
+        }}>
+          <button
+            disabled={pagina === 1}
+            onClick={() => setPagina(prev => Math.max(prev - 1, 1))}
+            style={{
+              padding: '0.55rem 0.9rem',
+              borderRadius: '0.6rem',
+              background: pagina === 1 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.07)',
+              border: '1px solid rgba(148,163,184,0.15)',
+              color: pagina === 1 ? '#475569' : 'white',
+              cursor: pagina === 1 ? 'not-allowed' : 'pointer',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              transition: 'background 0.2s'
+            }}
+          >
+            ← Anterior
+          </button>
+          
+          {Array.from({ length: totalPaginas }, (_, idx) => idx + 1).map(pNum => (
+            <button
+              key={pNum}
+              onClick={() => setPagina(pNum)}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '0.6rem',
+                background: pagina === pNum ? 'linear-gradient(120deg,#ff4b63,#ff8a00)' : 'rgba(255,255,255,0.07)',
+                border: pagina === pNum ? 'none' : '1px solid rgba(148,163,184,0.15)',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                boxShadow: pagina === pNum ? '0 4px 12px rgba(255,75,99,0.3)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              {pNum}
+            </button>
+          ))}
+
+          <button
+            disabled={pagina === totalPaginas}
+            onClick={() => setPagina(prev => Math.min(prev + 1, totalPaginas))}
+            style={{
+              padding: '0.55rem 0.9rem',
+              borderRadius: '0.6rem',
+              background: pagina === totalPaginas ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.07)',
+              border: '1px solid rgba(148,163,184,0.15)',
+              color: pagina === totalPaginas ? '#475569' : 'white',
+              cursor: pagina === totalPaginas ? 'not-allowed' : 'pointer',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              transition: 'background 0.2s'
+            }}
+          >
+            Siguiente →
+          </button>
         </div>
       )}
 

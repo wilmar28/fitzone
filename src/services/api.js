@@ -198,8 +198,11 @@ export const getDashboard = async () => {
 // Usa el backend Laravel — sin Supabase
 // ════════════════════════════════════════════════════════
 
-export const getProducts = async () => {
-  return apiCall('/api/products')
+export const getProducts = async (params = {}) => {
+  const query = new URLSearchParams()
+  if (params.search) query.set('search', params.search)
+  if (params.deleted) query.set('deleted', params.deleted)
+  return apiCall(`/api/products?${query.toString()}`)
 }
 
 export const getProductById = async (id) => {
@@ -338,9 +341,10 @@ export const getTiendaProductos = async (params = {}) => {
   if (params.categoria_id) query.set('categoria_id', params.categoria_id)
   if (params.marca_id)     query.set('marca_id',     params.marca_id)
   if (params.orden)        query.set('orden',        params.orden)
+  if (params.page)         query.set('page',         params.page)
+  if (params.per_page)     query.set('per_page',     params.per_page)
   const qs = query.toString()
-  const data = await apiCall(`/api/tienda/productos${qs ? `?${qs}` : ''}`)
-  return data.productos || data
+  return apiCall(`/api/tienda/productos${qs ? `?${qs}` : ''}`)
 }
 
 export const getTiendaProducto = async (id) => {
@@ -545,3 +549,63 @@ export const asignarCoach = (id_usuario, id_coach) => apiCall('/api/coach/asigna
 export const getRutinaPersonalizada = (id_usuario) => apiCall(`/api/coach/rutina/${id_usuario}`)
 
 export const crearRutinaPersonalizada = (id_usuario, data) => apiCall(`/api/coach/rutina/${id_usuario}`, { method: 'POST', body: JSON.stringify(data) })
+
+// ════════════════════════════════════════════════════════
+// ADMIN ENDPOINTS
+// ════════════════════════════════════════════════════════
+
+export const getAdminUsers = async (params = {}) => {
+  const query = new URLSearchParams()
+  if (params.search) query.set('search', params.search)
+  if (params.rol) query.set('rol', params.rol)
+  if (params.activo !== undefined && params.activo !== null && params.activo !== '') query.set('activo', params.activo)
+  if (params.plan) query.set('plan', params.plan)
+  if (params.deleted) query.set('deleted', params.deleted)
+  if (params.page) query.set('page', params.page)
+  if (params.per_page) query.set('per_page', params.per_page)
+  return apiCall(`/api/admin/users?${query.toString()}`)
+}
+
+export const updateAdminUser = async (id, userData) => {
+  return apiCall(`/api/admin/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  })
+}
+
+export const deleteAdminUser = async (id) => {
+  return apiCall(`/api/admin/users/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export const restoreAdminUser = async (id) => {
+  return apiCall(`/api/admin/users/${id}/restore`, {
+    method: 'POST',
+  })
+}
+
+export const getAdminMemberships = async (params = {}) => {
+  const query = new URLSearchParams()
+  if (params.search) query.set('search', params.search)
+  if (params.plan) query.set('plan', params.plan)
+  if (params.page) query.set('page', params.page)
+  if (params.per_page) query.set('per_page', params.per_page)
+  return apiCall(`/api/admin/memberships?${query.toString()}`)
+}
+
+export const getAdminDashboardStats = async () => {
+  return apiCall('/api/admin/dashboard-stats')
+}
+
+export const getCoachEmailLogs = async (userId = null) => {
+  const query = userId ? `?id_usuario=${userId}` : ''
+  return apiCall(`/api/coach/email-logs${query}`)
+}
+
+export const restoreBackendProduct = async (id) => {
+  return apiCall(`/api/admin/products/${id}/restore`, {
+    method: 'POST'
+  })
+}
+
