@@ -6,19 +6,23 @@ import Card from '../components/Card'
 const ejerciciosDefecto = [
   {
     id: 1,
-    nombre: 'Press de Banca Plano',
+    nombre: 'Press de Banca Plano con Barra',
     grupo_muscular: 'Pecho',
     dificultad: 'Intermedio',
     equipamiento: 'Barra',
+    series: '4',
+    repeticiones: '10-12',
     descripcion: 'Acuéstate en un banco plano, baja la barra al pecho de forma controlada y empuja hacia arriba extendiendo los brazos.',
     imagen_url: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80'
   },
   {
     id: 2,
-    nombre: 'Sentadillas Traseras',
+    nombre: 'Sentadillas Traseras con Barra',
     grupo_muscular: 'Piernas',
     dificultad: 'Avanzado',
     equipamiento: 'Barra',
+    series: '4',
+    repeticiones: '8-10',
     descripcion: 'Coloca la barra en tus trapecios, desciende flexionando las rodillas y caderas manteniendo la espalda recta, y vuelve a la posición inicial.',
     imagen_url: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=800&q=80'
   },
@@ -28,33 +32,41 @@ const ejerciciosDefecto = [
     grupo_muscular: 'Espalda',
     dificultad: 'Avanzado',
     equipamiento: 'Peso Corporal',
+    series: '4',
+    repeticiones: '8-10',
     descripcion: 'Cuélgate de una barra con agarre prono y levanta tu cuerpo hasta que tu barbilla pase la barra, usando la fuerza de tu espalda.',
     imagen_url: 'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?auto=format&fit=crop&w=800&q=80'
   },
   {
     id: 4,
-    nombre: 'Vuelos Laterales',
+    nombre: 'Elevaciones Laterales de Hombro',
     grupo_muscular: 'Hombros',
-    dificultad: 'Intermedio',
+    dificultad: 'Principiante',
     equipamiento: 'Mancuernas',
+    series: '4',
+    repeticiones: '15',
     descripcion: 'De pie, eleva lateralmente las mancuernas hasta la altura de los hombros con los codos ligeramente flexionados.',
     imagen_url: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=800&q=80'
   },
   {
     id: 5,
-    nombre: 'Curl de Bíceps',
+    nombre: 'Curl de Bíceps con Mancuernas',
     grupo_muscular: 'Brazos',
     dificultad: 'Principiante',
     equipamiento: 'Mancuernas',
+    series: '3',
+    repeticiones: '12',
     descripcion: 'Flexiona los codos para llevar las mancuernas hacia los hombros sin mover el torso.',
     imagen_url: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=800&q=80'
   },
   {
     id: 6,
-    nombre: 'Plancha Abdominal',
+    nombre: 'Plancha Abdominal Estática',
     grupo_muscular: 'Core',
     dificultad: 'Principiante',
     equipamiento: 'Peso Corporal',
+    series: '3',
+    repeticiones: '30s-60s',
     descripcion: 'Mantén el cuerpo alineado apoyándote en antebrazos y puntas de los pies, contrayendo el abdomen.',
     imagen_url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80'
   }
@@ -243,26 +255,23 @@ export default function Ejercicios() {
       ) : (
         <div className="grid-cards three-cols">
           {filteredExercises.map(e => (
-            <div key={e.id} className="animate-up" style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,75,99,0.08)',
-              borderRadius: '0.75rem',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              transition: 'all 0.3s'
-            }}>
-              {e.imagen_url && (
+            <div key={e.id} className="fz-glass-card animate-up">
+              
+              <div className="fz-glass-card-img-wrapper">
                 <img
-                  src={e.imagen_url}
+                  src={e.imagen_url || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80'}
                   alt={e.nombre}
-                  style={{ width: '100%', height: '180px', objectFit: 'cover', borderBottom: '1px solid rgba(255,75,99,0.08)' }}
+                  className="fz-glass-card-img"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80';
+                  }}
                 />
-              )}
-              <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
                       {e.grupo_muscular}
                     </span>
@@ -270,17 +279,29 @@ export default function Ejercicios() {
                       {e.dificultad}
                     </span>
                   </div>
-                  <h3 style={{ fontSize: '1.15rem', color: '#f8fafc', fontWeight: 700, marginBottom: '0.5rem' }}>{e.nombre}</h3>
-                  <p style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.4, marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <h3 style={{ fontSize: '1.1rem', color: '#f8fafc', fontWeight: 700, marginBottom: '0.5rem', lineHeight: 1.3 }}>{e.nombre}</h3>
+                  <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '3.6rem' }}>
                     {e.descripcion || 'Sin descripción.'}
                   </p>
                 </div>
+
                 <div>
-                  <p style={{ fontSize: '0.78rem', color: '#cbd5e1', marginBottom: '1rem' }}><strong>Equipamiento:</strong> {e.equipamiento}</p>
+                  <div className="fz-exercise-meta-grid">
+                    <div className="fz-exercise-meta-item">
+                      <span className="fz-exercise-meta-label">Series</span>
+                      <span className="fz-exercise-meta-val">{e.series || '3'}</span>
+                    </div>
+                    <div className="fz-exercise-meta-item">
+                      <span className="fz-exercise-meta-label">Reps</span>
+                      <span className="fz-exercise-meta-val">{e.repeticiones || '12'}</span>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: '0.78rem', color: '#cbd5e1', marginBottom: '0.8rem' }}><strong>Equipamiento:</strong> {e.equipamiento}</p>
                   <button
                     className="btn-primary"
                     onClick={() => setSelectedExercise(e)}
-                    style={{ width: '100%', justifyContent: 'center', padding: '0.55rem' }}
+                    style={{ width: '100%', justifyContent: 'center', padding: '0.6rem', borderRadius: '999px' }}
                   >
                     Ver detalles
                   </button>
@@ -308,6 +329,8 @@ export default function Ejercicios() {
               <p><strong>Grupo Muscular:</strong> {selectedExercise.grupo_muscular}</p>
               <p><strong>Dificultad:</strong> {selectedExercise.dificultad}</p>
               <p><strong>Equipamiento:</strong> {selectedExercise.equipamiento}</p>
+              <p><strong>Series Sugeridas:</strong> {selectedExercise.series || '3'}</p>
+              <p><strong>Repeticiones Recomendadas:</strong> {selectedExercise.repeticiones || '12'}</p>
               <div style={{ marginTop: '0.5rem' }}>
                 <strong>Instrucciones y Guía Técnica:</strong>
                 <p style={{

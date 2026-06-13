@@ -134,12 +134,12 @@ export default function Tienda() {
         setTotalProductos(res.total || 0)
       } catch {
         const mockProductos = [
-          { id: 1, nombre: 'Whey Gold Standard', sku: 'WGS-001', precio: 180000, categoria: 'Proteínas', marca: 'Optimum Nutrition', descripcion: 'Proteína whey de alta calidad con 24g por porción.', stock: 15, estado_stock: 'disponible', margen: 35, imagen_url: null },
-          { id: 2, nombre: 'Pre-workout C4', sku: 'C4-002', precio: 95000, categoria: 'Pre-entreno', marca: 'MuscleTech', descripcion: 'Energía explosiva para tus entrenamientos.', stock: 3, estado_stock: 'stock bajo', margen: 40, imagen_url: null },
-          { id: 3, nombre: 'Creatina Monohidrato', sku: 'CRE-003', precio: 75000, categoria: 'Proteínas', marca: 'Dymatize', descripcion: 'Aumenta fuerza y rendimiento muscular.', stock: 0, estado_stock: 'agotado', margen: 30, imagen_url: null },
-          { id: 4, nombre: 'Multivitamínico Sport', sku: 'MVS-004', precio: 55000, categoria: 'Vitaminas', marca: 'Optimum Nutrition', descripcion: 'Vitaminas y minerales para deportistas.', stock: 20, estado_stock: 'disponible', margen: 45, imagen_url: null },
-          { id: 5, nombre: 'BCAA 2:1:1', sku: 'BCA-005', precio: 88000, categoria: 'Proteínas', marca: 'MuscleTech', descripcion: 'Aminoácidos esenciales para recuperación muscular.', stock: 8, estado_stock: 'disponible', margen: 38, imagen_url: null },
-          { id: 6, nombre: 'Guantes de entreno', sku: 'GUA-006', precio: 45000, categoria: 'Accesorios', marca: 'Dymatize', descripcion: 'Guantes con grip reforzado para pesas.', stock: 12, estado_stock: 'disponible', margen: 50, imagen_url: null },
+          { id: 1, nombre: 'Whey Gold Standard (Vainilla)', sku: 'WGS-001', precio: 185000, categoria: 'Proteínas', marca: 'Optimum Nutrition', descripcion: 'Aislado de proteína de suero de leche de alta pureza. Ideal para ganar masa muscular y acelerar la recuperación.', stock: 15, estado_stock: 'disponible', margen: 35, imagen_url: 'https://images.unsplash.com/photo-1579758629938-03607ccdbaba?auto=format&fit=crop&w=800&q=80' },
+          { id: 2, nombre: 'Pre-workout C4 Original (Rojo)', sku: 'C4-002', precio: 98000, categoria: 'Pre-entreno', marca: 'Cellucor', descripcion: 'Energía explosiva y concentración mental para potenciar tus entrenamientos más exigentes.', stock: 3, estado_stock: 'stock bajo', margen: 40, imagen_url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80' },
+          { id: 3, nombre: 'Creatina Monohidrato Dymatize (300g)', sku: 'CRE-003', precio: 85000, categoria: 'Creatinas', marca: 'Dymatize', descripcion: 'Creatina monohidratada pura 100% micronizada para potenciar la fuerza muscular y la resistencia.', stock: 10, estado_stock: 'disponible', margen: 30, imagen_url: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?auto=format&fit=crop&w=800&q=80' },
+          { id: 4, nombre: 'Animal Pak Multivitamin (30 packs)', sku: 'MVS-004', precio: 88000, categoria: 'Vitaminas', marca: 'Universal Nutrition', descripcion: 'El complejo vitamínico líder para deportistas de alto rendimiento, cargado con más de 60 ingredientes.', stock: 20, estado_stock: 'disponible', margen: 45, imagen_url: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80' },
+          { id: 5, nombre: 'Guantes de Gym Grip Pro (Talla M)', sku: 'GUA-005', precio: 48000, categoria: 'Accesorios', marca: 'Dymatize', descripcion: 'Guantes deportivos transpirables con palma reforzada antideslizante para un agarre óptimo.', stock: 12, estado_stock: 'disponible', margen: 50, imagen_url: 'https://images.unsplash.com/photo-1605296867304-46d5465a25f1?auto=format&fit=crop&w=800&q=80' },
+          { id: 6, nombre: 'Vaso Mezclador Shaker Pro (Negro)', sku: 'SHK-006', precio: 28000, categoria: 'Accesorios', marca: 'Optimum Nutrition', descripcion: 'Shaker de alta calidad con rejilla mezcladora a prueba de fugas y compartimento para polvo.', stock: 0, estado_stock: 'agotado', margen: 50, imagen_url: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=800&q=80' },
         ]
         setProductos(mockProductos)
         setTotalPaginas(1)
@@ -303,51 +303,41 @@ export default function Tienda() {
       ) : (
         <div className="grid-cards">
           {productos.map(p => (
-            <div key={p.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div key={p.id} className="fz-glass-card">
 
               {/* Imagen */}
-              {p.imagen_url ? (
-                <img src={p.imagen_url} alt={p.nombre}
-                  style={{
-                    width: '100%', height: '185px', objectFit: 'cover',
-                    borderRadius: '0.6rem', marginBottom: '0.8rem'
-                  }} />
-              ) : (
-                <div style={{
-                  width: '100%', height: '185px', borderRadius: '0.6rem',
-                  background: 'linear-gradient(135deg,rgba(255,75,99,0.08),rgba(255,138,0,0.08))',
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '0.8rem', gap: '0.4rem'
-                }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-                    stroke="rgba(255,75,99,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 4v16M18 4v16M3 8h4M17 8h4M3 16h4M17 16h4M9 12h6" />
-                  </svg>
-                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sin imagen</span>
-                </div>
-              )}
+              <div className="fz-glass-card-img-wrapper">
+                <img 
+                  src={p.imagen_url || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80'} 
+                  alt={p.nombre}
+                  className="fz-glass-card-img"
+                  onError={(e) => { 
+                    e.target.onerror = null; 
+                    e.target.src = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80'; 
+                  }} 
+                />
+              </div>
 
               {/* Badges */}
-              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.6rem' }}>
                 {p.categoria && <span style={badgeStyle('255,75,99')}>{p.categoria}</span>}
                 {p.marca && <span style={badgeStyle('56,189,248')}>{p.marca}</span>}
               </div>
 
               {/* Nombre */}
-              <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.92rem', fontWeight: 600, lineHeight: 1.3 }}>
+              <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc', lineHeight: 1.3 }}>
                 {p.nombre}
               </h3>
 
               {/* SKU */}
-              <p style={{ margin: '0 0 0.4rem', fontSize: '0.7rem', color: '#64748b' }}>
+              <p style={{ margin: '0 0 0.6rem', fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 SKU: {p.sku}
               </p>
 
               {/* Descripción */}
               {p.descripcion && (
                 <p style={{
-                  margin: '0 0 0.6rem', fontSize: '0.78rem', color: '#94a3b8',
+                  margin: '0 0 1rem', fontSize: '0.82rem', color: '#cbd5e1',
                   lineHeight: 1.5, display: '-webkit-box',
                   WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
                 }}>
@@ -360,9 +350,11 @@ export default function Tienda() {
               {/* Precio + stock */}
               <div style={{
                 display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', marginTop: '0.6rem', marginBottom: '0.7rem'
+                alignItems: 'center', marginTop: '0.6rem', marginBottom: '0.8rem'
               }}>
-                <span className="price">${p.precio.toLocaleString('es-CO')}</span>
+                <span className="price" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ff4b63' }}>
+                  ${p.precio ? p.precio.toLocaleString('es-CO') : '0'} COP
+                </span>
                 <span style={badgeStyle(stockColor(p.estado_stock))}>
                   {p.estado_stock === 'agotado' ? 'Agotado'
                     : p.estado_stock === 'stock bajo' ? `Últimas ${p.stock} uds`
@@ -375,17 +367,17 @@ export default function Tienda() {
                 disabled={p.estado_stock === 'agotado'}
                 onClick={() => handleAddItem(p)}
                 style={{
-                  width: '100%', padding: '0.65rem', borderRadius: '999px',
-                  border: 'none', fontWeight: 700, fontSize: '0.8rem',
+                  width: '100%', padding: '0.7rem', borderRadius: '999px',
+                  border: 'none', fontWeight: 700, fontSize: '0.82rem',
                   cursor: p.estado_stock === 'agotado' ? 'not-allowed' : 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  transition: 'all 0.2s ease',
                   background: p.estado_stock === 'agotado'
-                    ? 'rgba(148,163,184,0.12)'
+                    ? 'rgba(255,255,255,0.05)'
                     : 'linear-gradient(120deg,#ff4b63,#ff8a00)',
                   color: p.estado_stock === 'agotado' ? '#475569' : 'white',
                   boxShadow: p.estado_stock === 'agotado' ? 'none' : '0 4px 15px rgba(255,75,99,0.25)',
                 }}>
-                {p.estado_stock === 'agotado' ? 'Sin stock' : 'Agregar al carrito'}
+                {p.estado_stock === 'agotado' ? 'Sin stock' : 'Comprar'}
               </button>
 
             </div>
